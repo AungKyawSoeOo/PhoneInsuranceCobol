@@ -10,7 +10,7 @@
            SELECT OPTIONAL COVERAGE-FILE ASSIGN TO 
             "./files/COVERAGE.CSV"
                ORGANIZATION IS LINE SEQUENTIAL.
-
+      *test
        DATA DIVISION.
        FILE SECTION.
        FD PLAN-FILE.
