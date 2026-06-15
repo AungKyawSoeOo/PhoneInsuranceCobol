@@ -4,11 +4,11 @@
        ENVIRONMENT DIVISION.
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
-           SELECT OPTIONAL PLAN-FILE ASSIGN TO "./files/PLAN.CSV"
+           SELECT OPTIONAL PLAN-FILE ASSIGN TO "./files/M_PLAN.CSV"
                ORGANIZATION IS LINE SEQUENTIAL.
 
-           SELECT OPTIONAL COVERAGE-FILE ASSIGN TO 
-            "./files/COVERAGE.CSV"
+           SELECT OPTIONAL COVERAGE-FILE ASSIGN TO
+            "./files/M_PLAN_COVERAGE.CSV"
                ORGANIZATION IS LINE SEQUENTIAL.
 
        DATA DIVISION.
@@ -27,7 +27,7 @@
        01 MAX-PAYOUT           PIC 9(8).
        01 ACTIVE-FLAG          PIC X(1).
 
-       01 COVERAGE-TYPE        PIC X(10).
+       01 COVERAGE-TYPE        PIC X(20).
        01 ENABLED-FLAG         PIC X(1).
 
        01 WS-NUM-INPUT         PIC X(15).
@@ -55,15 +55,15 @@
                ACCEPT PLAN-CODE
                DISPLAY "PLAN NAME:"
                ACCEPT PLAN-NAME
-               
+
                DISPLAY "BASE RATE (eg. 10.3):"
                ACCEPT WS-NUM-INPUT
                COMPUTE BASE-RATE = FUNCTION NUMVAL(WS-NUM-INPUT)
-               
+
                DISPLAY "MAX PAYOUT (e.g. 200):"
                ACCEPT WS-NUM-INPUT
                COMPUTE MAX-PAYOUT = FUNCTION NUMVAL(WS-NUM-INPUT)
-               
+
                DISPLAY "ACTIVE FLAG (Y/N):"
                ACCEPT ACTIVE-FLAG
 
@@ -75,7 +75,7 @@
                    PLAN-CODE DELIMITED BY "  " ","
                    PLAN-NAME DELIMITED BY "  " ","
                    WS-BASE-RATE-OUT  DELIMITED BY SIZE ","
-                   FUNCTION TRIM(WS-MAX-PAYOUT-OUT) 
+                   FUNCTION TRIM(WS-MAX-PAYOUT-OUT)
                    DELIMITED BY SIZE ","
                    ACTIVE-FLAG  DELIMITED BY SIZE
                    INTO PLAN-LINE
@@ -87,21 +87,22 @@
                ACCEPT WS-CHOICE
 
                PERFORM UNTIL WS-CHOICE = 'N' OR WS-CHOICE = 'n'
-                   
+
                    IF WS-CHOICE = 'Y' OR WS-CHOICE = 'y'
-                       DISPLAY "COVERAGE TYPE (SCREEN/WATER/THEFT):"
+                     DISPLAY "COVERAGE TYPE (Screen Damage/Water Damage"
+                     DISPLAY "               /Theft/Full Failure):"
                        ACCEPT COVERAGE-TYPE
                        DISPLAY "ENABLED FLAG (Y/N):"
                        ACCEPT ENABLED-FLAG
 
                        MOVE SPACES TO COVERAGE-LINE
 
-                       STRING
-                           PLAN-CODE     DELIMITED BY "  " ","
-                           COVERAGE-TYPE DELIMITED BY "  " ","
-                           ENABLED-FLAG  DELIMITED BY SIZE
-                           INTO COVERAGE-LINE
-                       END-STRING
+                  STRING
+                  FUNCTION TRIM(PLAN-CODE)     DELIMITED BY SIZE ","
+                  FUNCTION TRIM(COVERAGE-TYPE) DELIMITED BY SIZE ","
+                  ENABLED-FLAG                 DELIMITED BY SIZE
+                  INTO COVERAGE-LINE
+                  END-STRING
 
                        WRITE COVERAGE-LINE
                    END-IF
