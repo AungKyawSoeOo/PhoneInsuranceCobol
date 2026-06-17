@@ -309,6 +309,6 @@
            DISPLAY 'Estimated Premium: ' WS-EST-PREMIUM ' JPY'
            DISPLAY 'System Date     : ' WS-SYSTEM-DATE-STR
            DISPLAY 'Status          : PENDING'
-           DISPLAY '========================================='.
+           DISPLAY '=========================================='.
 
        END PROGRAM QUOTATION.
