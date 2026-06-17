@@ -17,6 +17,11 @@
               10 WS-PERIOD-FACTOR   PIC 9V99    VALUE ZERO.
               10 WS-PERIOD-MONTHS   PIC 99      VALUE ZERO.
               10 WS-EST-PREMIUM     PIC 9(9)V99 VALUE ZERO.
+           05 WS-PLAN-DATA.
+              10 WS-PLAN-CODE       PIC X(5)    VALUE SPACES.
+              10 WS-PLAN-NAME       PIC X(20)   VALUE SPACES.
+              10 WS-PLAN-BASE-RATE  PIC 9V999   VALUE ZERO.
+              10 WS-PLAN-MAX-PAYOUT PIC 9(8)    VALUE ZERO.
            05 WS-SYSTEM-DATE-STR    PIC X(19)   VALUE SPACES.
 
        PROCEDURE DIVISION.
@@ -31,3 +36,4 @@
            STOP RUN.
 
        END PROGRAM MAIN-PROGRAM.
+
