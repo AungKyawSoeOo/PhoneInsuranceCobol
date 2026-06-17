@@ -3,20 +3,8 @@
 
        DATA DIVISION.
        WORKING-STORAGE SECTION.
-       01 WS-CONTINUE      PIC X.
        01 WS-LEN           PIC 99.
        01 WS-FOUND         PIC X VALUE 'N'.
-
-       01 WS-IMEI             PIC X(15).
-       01 WS-DEVICE-TYPE      PIC X(10).
-       01 WS-DEVICE-MODEL     PIC X(20).
-       01 WS-PURCHASE-DATE    PIC X(10).
-       01 WS-PRICE            PIC 9(6).
-       01 WS-PRICE-CATEGORY   PIC X(6).
-       01 WS-PERIOD           PIC X(3).
-       01 WS-PERIOD-FACTOR    PIC 9V99.
-       01 WS-PERIOD-MONTHS    PIC 99.
-       01 WS-EST-PREMIUM      PIC 9(9)V99.
 
        01 WS-SYSTEM-DATE.
            05 WS-SYS-YEAR     PIC 9(4).
@@ -26,27 +14,31 @@
            05 WS-SYS-MINUTE   PIC 9(2).
            05 WS-SYS-SECOND   PIC 9(2).
 
-       01 WS-SYSTEM-DATE-STR  PIC X(19).
        01 WS-ERROR            PIC X(60).
        01 WS-CHOICE           PIC 9(2).
 
-       PROCEDURE DIVISION.
+       LINKAGE SECTION.
+       01  LK-COMM-AREA.
+           05 WS-CONTINUE           PIC X.
+           05 WS-DEVICE-DATA.
+              10 WS-IMEI            PIC X(15).
+              10 WS-DEVICE-TYPE     PIC X(10).
+              10 WS-DEVICE-MODEL    PIC X(20).
+              10 WS-PURCHASE-DATE   PIC X(10).
+              10 WS-PRICE           PIC 9(6).
+           05 WS-CALC-RESULTS.
+              10 WS-PRICE-CATEGORY  PIC X(6).
+              10 WS-PERIOD          PIC X(3).
+              10 WS-PERIOD-FACTOR   PIC 9V99.
+              10 WS-PERIOD-MONTHS   PIC 99.
+              10 WS-EST-PREMIUM     PIC 9(9)V99.
+           05 WS-SYSTEM-DATE-STR    PIC X(19).
+
+       PROCEDURE DIVISION USING LK-COMM-AREA.
 
        MAIN-PROCEDURE.
-           MOVE 'Y' TO WS-CONTINUE.
-           PERFORM UNTIL WS-CONTINUE = 'N' OR WS-CONTINUE = 'n'
-               PERFORM GET-ONE-QUOTATION
-           END-PERFORM
-           DISPLAY ' '
-           DISPLAY '========================================='
-           DISPLAY '    Thank you for using our service!    '
-           DISPLAY '========================================='
-           STOP RUN.
-
-       ASK-CONTINUE.
-           DISPLAY ' '
-           DISPLAY 'Do you want to add another quotation? (Y/N): '.
-           ACCEPT WS-CONTINUE.
+           PERFORM GET-ONE-QUOTATION
+           EXIT PROGRAM.
 
        GET-ONE-QUOTATION.
            PERFORM DISPLAY-WELCOME
@@ -59,8 +51,7 @@
            PERFORM SET-PRICE-CATEGORY
            PERFORM CALC-PREMIUM
            PERFORM GEN-SYS-DATE
-           PERFORM DISPLAY-RESULT
-           PERFORM ASK-CONTINUE.
+           PERFORM DISPLAY-RESULT.
 
       *> ==========================================
       *> DISPLAY WELCOME
