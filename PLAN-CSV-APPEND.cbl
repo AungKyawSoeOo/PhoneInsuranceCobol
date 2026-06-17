@@ -4,11 +4,11 @@
        ENVIRONMENT DIVISION.
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
-           SELECT OPTIONAL PLAN-FILE ASSIGN TO "./files/M_PLAN.CSV"
+           SELECT OPTIONAL PLAN-FILE ASSIGN TO "../files/M_PLAN.CSV"
                ORGANIZATION IS LINE SEQUENTIAL.
 
            SELECT OPTIONAL COVERAGE-FILE ASSIGN TO
-            "./files/M_PLAN_COVERAGE.CSV"
+            "../files/M_PLAN_COVERAGE.CSV"
                ORGANIZATION IS LINE SEQUENTIAL.
 
        DATA DIVISION.
@@ -23,7 +23,7 @@
        01 PLAN-CODE            PIC X(5).
        01 PLAN-NAME            PIC X(20).
 
-       01 BASE-RATE            PIC 99V999.
+       01 BASE-RATE            PIC 99999.
        01 MAX-PAYOUT           PIC 9(8).
        01 ACTIVE-FLAG          PIC X(1).
 
@@ -32,7 +32,7 @@
 
        01 WS-NUM-INPUT         PIC X(15).
 
-       01 WS-BASE-RATE-OUT     PIC 99.999.
+       01 WS-BASE-RATE-OUT     PIC ZZZ99.
        01 WS-MAX-PAYOUT-OUT    PIC ZZZZZZZ9.
 
        01 WS-END               PIC X VALUE 'Y'.
