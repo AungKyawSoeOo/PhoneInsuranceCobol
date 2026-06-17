@@ -29,8 +29,10 @@
        01 WS-EST-PREMIUM     PIC 9(9)V99.
        01 WS-PLAN-CODE       PIC X(5).
        01 WS-PLAN-NAME       PIC X(20).
-       01 WS-PLAN-BASE-RATE  PIC 9V999.
+       01 WS-PLAN-BASE-RATE  PIC 99999.
        01 WS-PLAN-MAX-PAYOUT PIC 9(8).
+       01 WS-CURRENT-PREMIUM PIC 9(9)V99.
+       01 WS-FINAL-PREMIUM   PIC 9(9)V99.
        01 WS-CHOICE          PIC 9(2).
        01 WS-ERROR           PIC X(60).
 
@@ -39,6 +41,8 @@
       *> ==========================================
        01 WS-PRICE-DISP      PIC ZZZ,ZZ9.
        01 WS-PREMIUM-DISP    PIC ZZZ,ZZ9.99.
+       01 WS-CURRENT-PREM-DISP PIC ZZZ,ZZZ,ZZ9.99.
+       01 WS-FINAL-PREM-DISP   PIC ZZZ,ZZZ,ZZ9.99.
 
       *> ==========================================
       *> DATE FIELDS
@@ -85,8 +89,10 @@
            05 WS-PLAN-DATA.
               10 WS-PLAN-CODE-LK   PIC X(5).
               10 WS-PLAN-NAME-LK   PIC X(20).
-              10 WS-PLAN-BASE-RATE-LK PIC 9V999.
+              10 WS-PLAN-BASE-RATE-LK PIC 99999.
               10 WS-PLAN-MAX-PAYOUT-LK PIC 9(8).
+              10 WS-CURRENT-PREMIUM-LK PIC 9(9)V99.
+              10 WS-FINAL-PREMIUM-LK PIC 9(9)V99.
            05 WS-SYSTEM-DATE-STR-LK PIC X(19).
 
        PROCEDURE DIVISION USING LK-COMM-AREA.
@@ -106,6 +112,7 @@
            PERFORM SET-PRICE-CATEGORY
            PERFORM CALC-PREMIUM
            PERFORM SELECT-INSURANCE-PLAN
+           PERFORM CALC-SELECTED-PLAN-PREMIUM
            PERFORM GEN-SYS-DATE
            PERFORM DISPLAY-RESULT
            PERFORM MOVE-TO-LINKAGE.
@@ -128,6 +135,8 @@
            MOVE WS-PLAN-NAME      TO WS-PLAN-NAME-LK
            MOVE WS-PLAN-BASE-RATE TO WS-PLAN-BASE-RATE-LK
            MOVE WS-PLAN-MAX-PAYOUT TO WS-PLAN-MAX-PAYOUT-LK
+           MOVE WS-CURRENT-PREMIUM TO WS-CURRENT-PREMIUM-LK
+           MOVE WS-FINAL-PREMIUM TO WS-FINAL-PREMIUM-LK
            MOVE WS-SYSTEM-DATE-STR TO WS-SYSTEM-DATE-STR-LK.
 
       *> ==========================================
@@ -445,6 +454,18 @@
                WS-PLAN-NAME,
                WS-PLAN-BASE-RATE,
                WS-PLAN-MAX-PAYOUT.
+
+      *> ==========================================
+      *> CALCULATE SELECTED PLAN PREMIUM (Step 3-3)
+      *> ==========================================
+       CALC-SELECTED-PLAN-PREMIUM.
+           CALL 'PLAN-PREMIUM-CALC' USING
+               WS-PRICE,
+               WS-PERIOD-FACTOR,
+               WS-EST-PREMIUM,
+               WS-PLAN-BASE-RATE,
+               WS-CURRENT-PREMIUM,
+               WS-FINAL-PREMIUM.
       *> ==========================================
       *> GENERATE SYSTEM DATE
       *> ==========================================
@@ -461,6 +482,8 @@
       *> Format numbers with commas
            MOVE WS-PRICE TO WS-PRICE-DISP.
            MOVE WS-EST-PREMIUM TO WS-PREMIUM-DISP.
+           MOVE WS-CURRENT-PREMIUM TO WS-CURRENT-PREM-DISP.
+           MOVE WS-FINAL-PREMIUM TO WS-FINAL-PREM-DISP.
 
            DISPLAY ' '
            DISPLAY '========================================='
@@ -482,9 +505,15 @@
                    WS-PLAN-NAME
            DISPLAY 'Plan Base Rate  : ' WS-PLAN-BASE-RATE
            DISPLAY 'Plan Max Payout : ' WS-PLAN-MAX-PAYOUT ' JPY'
+           DISPLAY 'Current Premium: '
+                   FUNCTION TRIM(WS-CURRENT-PREM-DISP) ' JPY'
+           DISPLAY 'Final Premium  : '
+                   FUNCTION TRIM(WS-FINAL-PREM-DISP) ' JPY'
            DISPLAY 'System Date     : ' WS-SYSTEM-DATE-STR
            DISPLAY 'Status          : PENDING'
            DISPLAY '========================================='.
 
        END PROGRAM QUOTATION.
+
+
 
