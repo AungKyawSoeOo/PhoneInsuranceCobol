@@ -21,20 +21,13 @@
 
        PROCEDURE DIVISION.
        MAIN-ORCHESTRATOR.
-           
-           PERFORM UNTIL WS-CONTINUE = 'N' OR WS-CONTINUE = 'n'
-               
+
                CALL 'QUOTATION' USING WS-COMM-AREA
-               
-               DISPLAY ' '
-               DISPLAY 'Do you want to add another quotation? (Y/N): '
-               ACCEPT WS-CONTINUE
-           END-PERFORM
-           
-           DISPLAY ' '
-           DISPLAY '========================================='
-           DISPLAY '    Thank you for using our service!    '
-           DISPLAY '========================================='
+               DISPLAY "PRICE FROM MAIN" WS-PRICE
+                DISPLAY "purchase date FROM MAIN" WS-PURCHASE-DATE
+
+
+
            STOP RUN.
 
        END PROGRAM MAIN-PROGRAM.
