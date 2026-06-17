@@ -1,0 +1,15 @@
+Tables
+
+Plan Master Tables
+------------------
+Table: M_PLAN
+- PLAN_CODE
+- PLAN_NAME
+- BASE_RATE
+- MAX_PAYOUT
+- ACTIVATE_FLAG
+
+Table: M_PLAN_COVERAGE
+- PLAN_CODE
+- COVERAGE_TYPE
+- ENABLED_FLAG
