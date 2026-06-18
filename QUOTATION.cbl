@@ -50,6 +50,9 @@
        01 WS-YEAR            PIC 9(4).
        01 WS-MONTH           PIC 9(2).
        01 WS-DAY             PIC 9(2).
+       01 WS-AGE             PIC 9(3).
+       01 WS-AGE-OUT         PIC ZZZ.
+       01 WS-USER-DOB-YEAR   PIC 9(4).
 
        01 WS-SYSTEM-DATE.
            05 WS-SYS-YEAR    PIC 9(4).
@@ -94,6 +97,13 @@
               10 WS-CURRENT-PREMIUM-LK PIC 9(9)V99.
               10 WS-FINAL-PREMIUM-LK PIC 9(9)V99.
            05 WS-SYSTEM-DATE-STR-LK PIC X(19).
+           05 WS-USER-DATA-LK.
+              10 WS-USER-NAME-LK        PIC X(50).
+              10 WS-USER-EMAIL-LK       PIC X(50).
+              10 WS-USER-PHONE-LK       PIC X(15).
+              10 WS-USER-POSTAL-CODE-LK PIC X(7).
+              10 WS-USER-ADDRESS-LK     PIC X(100).
+              10 WS-USER-DOB-LK         PIC X(8).
 
        PROCEDURE DIVISION USING LK-COMM-AREA.
 
@@ -453,7 +463,8 @@
                WS-PLAN-CODE,
                WS-PLAN-NAME,
                WS-PLAN-BASE-RATE,
-               WS-PLAN-MAX-PAYOUT.
+               WS-PLAN-MAX-PAYOUT,
+               WS-USER-DATA-LK.
 
       *> ==========================================
       *> CALCULATE SELECTED PLAN PREMIUM (Step 3-3)
@@ -511,6 +522,23 @@
                    FUNCTION TRIM(WS-FINAL-PREM-DISP) ' JPY'
            DISPLAY 'System Date     : ' WS-SYSTEM-DATE-STR
            DISPLAY 'Status          : PENDING'
+
+           MOVE WS-USER-DOB-LK(1:4) TO WS-USER-DOB-YEAR
+           COMPUTE WS-AGE = WS-SYS-YEAR - WS-USER-DOB-YEAR
+           MOVE WS-AGE TO WS-AGE-OUT
+           DISPLAY ' '
+           DISPLAY '========================================='
+           DISPLAY '            USER INFORMATION             '
+           DISPLAY '========================================='
+           DISPLAY 'Name            : ' FUNCTION TRIM(WS-USER-NAME-LK)
+           DISPLAY 'Email           : ' FUNCTION TRIM(WS-USER-EMAIL-LK)
+           DISPLAY 'Phone           : ' FUNCTION TRIM(WS-USER-PHONE-LK)
+           DISPLAY 'Postal Code     : ' 
+                   FUNCTION TRIM(WS-USER-POSTAL-CODE-LK)
+           DISPLAY 'Address        : ' FUNCTION TRIM(WS-USER-ADDRESS-LK)
+           DISPLAY 'Date of Birth   : ' WS-USER-DOB-LK(1:4) '-'
+                   WS-USER-DOB-LK(5:2) '-' WS-USER-DOB-LK(7:2)
+           DISPLAY 'Age       : ' FUNCTION TRIM(WS-AGE-OUT) ' years'
            DISPLAY '========================================='.
 
        END PROGRAM QUOTATION.

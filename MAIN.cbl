@@ -25,15 +25,21 @@
               10 WS-CURRENT-PREMIUM PIC 9(9)V99 VALUE ZERO.
               10 WS-FINAL-PREMIUM   PIC 9(9)V99 VALUE ZERO.
            05 WS-SYSTEM-DATE-STR    PIC X(19)   VALUE SPACES.
+           05 WS-USER-DATA.
+              10 WS-USER-NAME        PIC X(50)   VALUE SPACES.
+              10 WS-USER-EMAIL       PIC X(50)   VALUE SPACES.
+              10 WS-USER-PHONE       PIC X(15)   VALUE SPACES.
+              10 WS-USER-POSTAL-CODE PIC X(7)    VALUE SPACES.
+              10 WS-USER-ADDRESS     PIC X(100)  VALUE SPACES.
+              10 WS-USER-DOB         PIC X(8)    VALUE SPACES.
 
        PROCEDURE DIVISION.
        MAIN-ORCHESTRATOR.
-
                CALL 'QUOTATION' USING WS-COMM-AREA
+      *    Delete display after project finished
+               DISPLAY "User Name from USER-INFO: " WS-USER-NAME
                DISPLAY "PRICE FROM MAIN" WS-PRICE
-                DISPLAY "purchase date FROM MAIN" WS-PURCHASE-DATE
-
-
+               DISPLAY "purchase date FROM MAIN" WS-PURCHASE-DATE
 
            STOP RUN.
 

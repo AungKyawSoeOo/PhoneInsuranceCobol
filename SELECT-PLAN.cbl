@@ -58,11 +58,19 @@
        01 LK-PLAN-NAME              PIC X(20).
        01 LK-PLAN-BASE-RATE         PIC 99999.
        01 LK-PLAN-MAX-PAYOUT        PIC 9(8).
+       01 LK-USER-DATA.
+           05 LK-USER-NAME        PIC X(50).
+           05 LK-USER-EMAIL       PIC X(50).
+           05 LK-USER-PHONE       PIC X(15).
+           05 LK-USER-POSTAL-CODE PIC X(7).
+           05 LK-USER-ADDRESS     PIC X(100).
+           05 LK-USER-DOB         PIC X(8).
 
        PROCEDURE DIVISION USING LK-PLAN-CODE,
                                 LK-PLAN-NAME,
                                 LK-PLAN-BASE-RATE,
-                                LK-PLAN-MAX-PAYOUT.
+                                LK-PLAN-MAX-PAYOUT,
+                                LK-USER-DATA.
 
        MAIN-PROCEDURE.
            PERFORM LOAD-ACTIVE-PLANS
@@ -75,6 +83,8 @@
            PERFORM SHOW-PLAN-MENU
            PERFORM GET-PLAN-CHOICE
            PERFORM SET-SELECTED-PLAN
+
+           CALL 'USER-INFO' USING LK-USER-DATA
 
            EXIT PROGRAM.
 
