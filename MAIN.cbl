@@ -4,7 +4,7 @@
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        01  WS-COMM-AREA.
-           05 WS-CONTINUE           PIC X       VALUE 'Y'.
+
            05 WS-DEVICE-DATA.
               10 WS-IMEI            PIC X(15)   VALUE SPACES.
               10 WS-DEVICE-TYPE     PIC X(10)   VALUE SPACES.
@@ -23,10 +23,7 @@
        MAIN-ORCHESTRATOR.
 
                CALL 'QUOTATION' USING WS-COMM-AREA
-               DISPLAY "PRICE FROM MAIN" WS-PRICE
-                DISPLAY "purchase date FROM MAIN" WS-PURCHASE-DATE
-
-
+               DISPLAY "DEVICE TYPE"WS-DEVICE-TYPE.
 
            STOP RUN.
 

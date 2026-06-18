@@ -18,6 +18,7 @@
       *> ==========================================
        01 WS-LEN             PIC 99.
        01 WS-IMEI            PIC X(15).
+       01 WS-IMEI-TEMP       PIC X(15).
        01 WS-DEVICE-TYPE     PIC X(10).
        01 WS-DEVICE-MODEL    PIC X(20).
        01 WS-PURCHASE-DATE   PIC X(10).
@@ -27,14 +28,52 @@
        01 WS-PERIOD-FACTOR   PIC 9V99.
        01 WS-PERIOD-MONTHS   PIC 99.
        01 WS-EST-PREMIUM     PIC 9(9)V99.
-       01 WS-CHOICE          PIC 9(2).
        01 WS-ERROR           PIC X(60).
+
+      *> ==========================================
+      *> CHOICE FIELDS
+      *> ==========================================
+       01 WS-CHOICE          PIC X.
+       01 WS-CHOICE-NUM      PIC 9.
+
+      *> ==========================================
+      *> DISPLAY FIELDS (For removing leading zeros)
+      *> ==========================================
+       01 WS-DISP-COUNT     PIC Z9.
+
+      *> ==========================================
+      *> DEVICE MASTER VARIABLES
+      *> ==========================================
+       01 WS-DEVICE-TYPE-CODE PIC 9.
+       01 WS-DEVICE-TYPE-NAME PIC X(10).
+       01 WS-MODEL-FOUND      PIC X VALUE 'N'.
+       01 WS-LOAD-FLAG        PIC X VALUE 'N'.
+           88 WS-LOAD-DONE    VALUE 'Y'.
+
+       01 WS-EMPTY-NUM        PIC 9 VALUE 0.
+       01 WS-EMPTY-CHAR       PIC X VALUE SPACES.
+
+       01 WS-TYPE-LIST.
+           05 WS-TYPE-COUNT   PIC 99.
+           05 WS-TYPE-ENTRY OCCURS 10 TIMES.
+               10 WS-TYPE-CODE PIC 9.
+               10 WS-TYPE-NAME PIC X(10).
+
+       01 WS-MODEL-LIST.
+           05 WS-MODEL-COUNT  PIC 99.
+           05 WS-MODEL-ENTRY OCCURS 20 TIMES.
+               10 WS-MODEL-NAME PIC X(20).
+
+       01 WS-I                PIC 99.
+       01 WS-J                PIC 99.
+       01 WS-FOUND            PIC X VALUE 'N'.
+       01 WS-VALID-FLAG       PIC X VALUE 'Y'.
 
       *> ==========================================
       *> CURRENCY FORMAT FIELDS
       *> ==========================================
        01 WS-PRICE-DISP      PIC ZZZ,ZZ9.
-       01 WS-PREMIUM-DISP    PIC ZZZ,ZZ9.99.
+       01 WS-PREMIUM-DISP    PIC ZZZ,ZZ9.
 
       *> ==========================================
       *> DATE FIELDS
@@ -52,6 +91,8 @@
            05 WS-SYS-SECOND  PIC 9(2).
 
        01 WS-SYSTEM-DATE-STR PIC X(19).
+       01 WS-PURCHASE-NUM    PIC 9(8).
+       01 WS-SYSTEM-NUM      PIC 9(8).
 
       *> ==========================================
       *> LEAP YEAR FIELDS
@@ -61,7 +102,7 @@
            88 NOT-LEAP-YEAR  VALUE 'N'.
 
       *> ==========================================
-      *> LINKAGE SECTION (accept data from main)
+      *> LINKAGE SECTION
       *> ==========================================
        LINKAGE SECTION.
        01  LK-COMM-AREA.
@@ -83,8 +124,19 @@
        PROCEDURE DIVISION USING LK-COMM-AREA.
 
        MAIN-PROCEDURE.
+           PERFORM LOAD-DEVICE-MASTER
            PERFORM GET-ONE-QUOTATION
            EXIT PROGRAM.
+
+       LOAD-DEVICE-MASTER.
+           IF NOT WS-LOAD-DONE
+               MOVE 0 TO WS-EMPTY-NUM
+               MOVE SPACES TO WS-EMPTY-CHAR
+               CALL 'DEVICE-READER' USING 'L', WS-EMPTY-NUM,
+                    WS-EMPTY-CHAR, WS-DEVICE-TYPE-NAME,
+                    WS-MODEL-FOUND, WS-TYPE-LIST, WS-MODEL-LIST
+               SET WS-LOAD-DONE TO TRUE
+           END-IF.
 
        GET-ONE-QUOTATION.
            PERFORM DISPLAY-WELCOME
@@ -100,9 +152,6 @@
            PERFORM DISPLAY-RESULT
            PERFORM MOVE-TO-LINKAGE.
 
-      *> ==========================================
-      *> MOVE DATA TO LINKAGE (Return to Main)
-      *> ==========================================
        MOVE-TO-LINKAGE.
            MOVE WS-IMEI           TO WS-IMEI-LK
            MOVE WS-DEVICE-TYPE    TO WS-DEVICE-TYPE-LK
@@ -116,9 +165,6 @@
            MOVE WS-EST-PREMIUM    TO WS-EST-PREMIUM-LK
            MOVE WS-SYSTEM-DATE-STR TO WS-SYSTEM-DATE-STR-LK.
 
-      *> ==========================================
-      *> DISPLAY WELCOME
-      *> ==========================================
        DISPLAY-WELCOME.
            DISPLAY '========================================='
            DISPLAY '    MOBILE INSURANCE QUOTATION SYSTEM    '
@@ -131,124 +177,151 @@
       *> ==========================================
        GET-IMEI.
            DISPLAY ' '
-           DISPLAY 'Enter Phone IMEI (10-15 chars): '
-           DISPLAY 'Example: 123456789012345'
+           DISPLAY 'Enter Phone IMEI (10-15 digits only): '
+           DISPLAY '(Example: 123456789012345)'
            ACCEPT WS-IMEI.
 
-           MOVE FUNCTION LENGTH(FUNCTION TRIM(WS-IMEI)) TO WS-LEN.
+           MOVE SPACES TO WS-IMEI-TEMP
+           MOVE 0 TO WS-LEN
+
+           PERFORM VARYING WS-I FROM 1 BY 1
+               UNTIL WS-I > 15
+               IF WS-IMEI(WS-I:1) >= '0' AND
+                  WS-IMEI(WS-I:1) <= '9'
+                   ADD 1 TO WS-LEN
+                   MOVE WS-IMEI(WS-I:1)
+                     TO WS-IMEI-TEMP(WS-LEN:1)
+               END-IF
+           END-PERFORM
+
+           MOVE WS-IMEI-TEMP TO WS-IMEI
+
            IF WS-LEN < 10 OR WS-LEN > 15
-               DISPLAY 'IMEI must be 10-15 characters!'
+               DISPLAY 'IMEI must be 10-15 digits!'
                PERFORM GET-IMEI
+               EXIT PARAGRAPH
            END-IF.
 
       *> ==========================================
-      *> GET DEVICE TYPE
+      *> GET DEVICE TYPE (FIXED DISPLAY - NO LEADING ZERO)
       *> ==========================================
        GET-DEVICE-TYPE.
+           PERFORM GET-TYPE-LIST-FROM-FILE.
+
            DISPLAY ' '
            DISPLAY 'SELECT DEVICE TYPE:'
            DISPLAY '-----------------------------------------'
-           DISPLAY '[1] iPhone'
-           DISPLAY '[2] Android'
+
+           PERFORM VARYING WS-I FROM 1 BY 1
+               UNTIL WS-I > WS-TYPE-COUNT
+               DISPLAY '[' WS-TYPE-CODE(WS-I) '] '
+                       FUNCTION TRIM(WS-TYPE-NAME(WS-I))
+           END-PERFORM
+
            DISPLAY '-----------------------------------------'
-           DISPLAY 'Enter choice (1-2): '
+      *> FIX: Use WS-DISP-COUNT to remove leading zero
+           MOVE WS-TYPE-COUNT TO WS-DISP-COUNT
+           DISPLAY 'Enter choice (1-'
+                   FUNCTION TRIM(WS-DISP-COUNT) '): '
            ACCEPT WS-CHOICE
 
-           IF WS-CHOICE = 1
-               MOVE 'iPhone' TO WS-DEVICE-TYPE
-           ELSE
-               IF WS-CHOICE = 2
-                   MOVE 'Android' TO WS-DEVICE-TYPE
-               ELSE
-                   DISPLAY 'Invalid device type! (1 or 2 only)'
-                   PERFORM GET-DEVICE-TYPE
+           IF WS-CHOICE NOT NUMERIC
+               DISPLAY 'Invalid choice! Please enter a number.'
+               PERFORM GET-DEVICE-TYPE
+               EXIT PARAGRAPH
+           END-IF
+
+           MOVE FUNCTION NUMVAL(WS-CHOICE) TO WS-CHOICE-NUM
+
+           MOVE 0 TO WS-DEVICE-TYPE-CODE.
+           PERFORM VARYING WS-I FROM 1 BY 1
+               UNTIL WS-I > WS-TYPE-COUNT
+               IF WS-CHOICE-NUM = WS-TYPE-CODE(WS-I)
+                   MOVE WS-TYPE-CODE(WS-I)
+                     TO WS-DEVICE-TYPE-CODE
+                   MOVE WS-TYPE-NAME(WS-I)
+                     TO WS-DEVICE-TYPE
                END-IF
+           END-PERFORM
+
+           IF WS-DEVICE-TYPE-CODE = 0
+               DISPLAY 'Invalid device type!'
+               PERFORM GET-DEVICE-TYPE
            END-IF.
 
+       GET-TYPE-LIST-FROM-FILE.
+           MOVE 0 TO WS-EMPTY-NUM
+           MOVE SPACES TO WS-EMPTY-CHAR
+           CALL 'DEVICE-READER' USING 'T', WS-EMPTY-NUM,
+                WS-EMPTY-CHAR, WS-DEVICE-TYPE-NAME,
+                WS-MODEL-FOUND, WS-TYPE-LIST, WS-MODEL-LIST.
+
       *> ==========================================
-      *> GET DEVICE MODEL
+      *> GET DEVICE MODEL (FIXED DISPLAY - NO LEADING ZERO)
       *> ==========================================
        GET-DEVICE-MODEL.
-           IF WS-DEVICE-TYPE = 'iPhone'
-               PERFORM GET-IPHONE-MODEL
-           ELSE
-               PERFORM GET-ANDROID-MODEL
-           END-IF.
+           PERFORM GET-MODELS-FROM-FILE.
+           PERFORM DISPLAY-MODELS-DYNAMIC.
 
-       GET-IPHONE-MODEL.
-           DISPLAY ' '
-           DISPLAY 'SELECT IPHONE MODEL:'
            DISPLAY '-----------------------------------------'
-           DISPLAY '[1] iPhone 13'
-           DISPLAY '[2] iPhone 14'
-           DISPLAY '[3] iPhone 15'
-           DISPLAY '[4] iPhone 15 Pro'
-           DISPLAY '[5] iPhone 16 Pro'
-           DISPLAY '-----------------------------------------'
-           DISPLAY 'Enter choice (1-5): '
+      *> FIX: Use WS-DISP-COUNT to remove leading zero
+           MOVE WS-MODEL-COUNT TO WS-DISP-COUNT
+           DISPLAY 'Enter choice (1-'
+                   FUNCTION TRIM(WS-DISP-COUNT) '): '
            ACCEPT WS-CHOICE
 
-           IF WS-CHOICE = 1
-               MOVE 'iPhone 13' TO WS-DEVICE-MODEL
+           IF WS-CHOICE NOT NUMERIC
+               DISPLAY 'Invalid choice! Please enter a number.'
+               PERFORM GET-DEVICE-MODEL
+               EXIT PARAGRAPH
+           END-IF
+
+           MOVE FUNCTION NUMVAL(WS-CHOICE) TO WS-CHOICE-NUM
+
+           IF WS-CHOICE-NUM >= 1 AND WS-CHOICE-NUM <= WS-MODEL-COUNT
+               MOVE WS-MODEL-NAME(WS-CHOICE-NUM)
+                 TO WS-DEVICE-MODEL
+               PERFORM VALIDATE-MODEL-FROM-FILE
            ELSE
-               IF WS-CHOICE = 2
-                   MOVE 'iPhone 14' TO WS-DEVICE-MODEL
-               ELSE
-                   IF WS-CHOICE = 3
-                       MOVE 'iPhone 15' TO WS-DEVICE-MODEL
-                   ELSE
-                       IF WS-CHOICE = 4
-                           MOVE 'iPhone 15 Pro' TO WS-DEVICE-MODEL
-                       ELSE
-                           IF WS-CHOICE = 5
-                               MOVE 'iPhone 16 Pro' TO WS-DEVICE-MODEL
-                           ELSE
-                             DISPLAY 'Invalid iPhone model! (1-5 only)'
-                               PERFORM GET-IPHONE-MODEL
-                           END-IF
-                       END-IF
-                   END-IF
-               END-IF
+               DISPLAY 'Invalid model choice!'
+               PERFORM GET-DEVICE-MODEL
            END-IF.
 
-       GET-ANDROID-MODEL.
-           DISPLAY ' '
-           DISPLAY 'SELECT ANDROID MODEL:'
-           DISPLAY '-----------------------------------------'
-           DISPLAY '[1] Galaxy S24'
-           DISPLAY '[2] Xperia 1 VI'
-           DISPLAY '[3] Pixel 8'
-           DISPLAY '[4] AQUOS sense'
-           DISPLAY '[5] Android Low-end'
-           DISPLAY '-----------------------------------------'
-           DISPLAY 'Enter choice (1-5): '
-           ACCEPT WS-CHOICE
+       GET-MODELS-FROM-FILE.
+           MOVE SPACES TO WS-EMPTY-CHAR
+           CALL 'DEVICE-READER' USING 'M', WS-DEVICE-TYPE-CODE,
+                WS-EMPTY-CHAR, WS-DEVICE-TYPE-NAME,
+                WS-MODEL-FOUND, WS-TYPE-LIST, WS-MODEL-LIST.
 
-           IF WS-CHOICE = 1
-               MOVE 'Galaxy S24' TO WS-DEVICE-MODEL
-           ELSE
-               IF WS-CHOICE = 2
-                   MOVE 'Xperia 1 VI' TO WS-DEVICE-MODEL
-               ELSE
-                   IF WS-CHOICE = 3
-                       MOVE 'Pixel 8' TO WS-DEVICE-MODEL
-                   ELSE
-                       IF WS-CHOICE = 4
-                           MOVE 'AQUOS sense' TO WS-DEVICE-MODEL
-                       ELSE
-                           IF WS-CHOICE = 5
-                               MOVE 'Android Low-end' TO WS-DEVICE-MODEL
-                           ELSE
-                             DISPLAY 'Invalid Android model! (1-5 only)'
-                               PERFORM GET-ANDROID-MODEL
-                           END-IF
-                       END-IF
-                   END-IF
-               END-IF
+      *> ==========================================
+      *> DISPLAY MODELS DYNAMIC (FIXED - NO LEADING ZERO)
+      *> ==========================================
+       DISPLAY-MODELS-DYNAMIC.
+           DISPLAY ' '
+           DISPLAY 'SELECT ' FUNCTION TRIM(WS-DEVICE-TYPE)
+                   ' MODEL:'
+           DISPLAY '-----------------------------------------'
+
+           PERFORM VARYING WS-I FROM 1 BY 1
+               UNTIL WS-I > WS-MODEL-COUNT
+      *> FIX: Use WS-DISP-COUNT to remove leading zero
+               MOVE WS-I TO WS-DISP-COUNT
+               DISPLAY '[' FUNCTION TRIM(WS-DISP-COUNT) '] '
+                       FUNCTION TRIM(WS-MODEL-NAME(WS-I))
+           END-PERFORM.
+
+       VALIDATE-MODEL-FROM-FILE.
+           CALL 'DEVICE-READER' USING 'S', WS-DEVICE-TYPE-CODE,
+                WS-DEVICE-MODEL, WS-DEVICE-TYPE-NAME,
+                WS-MODEL-FOUND, WS-TYPE-LIST, WS-MODEL-LIST
+
+           IF WS-MODEL-FOUND = 'N'
+               DISPLAY 'Invalid model! Please try again.'
+               PERFORM GET-DEVICE-MODEL
            END-IF.
 
       *> ==========================================
-      *> GET PURCHASE DATE WITH VALIDATION
+      *> GET PURCHASE DATE
       *> ==========================================
        GET-PURCHASE-DATE.
            DISPLAY ' '
@@ -259,10 +332,9 @@
            PERFORM VALIDATE-DATE.
 
       *> ==========================================
-      *> VALIDATE DATE (Format + Month + Day + Leap Year)
+      *> VALIDATE DATE
       *> ==========================================
        VALIDATE-DATE.
-      *> Check format (YYYY-MM-DD)
            IF WS-PURCHASE-DATE(5:1) NOT = '-' OR
               WS-PURCHASE-DATE(8:1) NOT = '-'
                DISPLAY 'Date format must be YYYY-MM-DD!'
@@ -270,19 +342,18 @@
                EXIT PARAGRAPH
            END-IF.
 
-      *> Get Year, Month, Day
            MOVE WS-PURCHASE-DATE(1:4) TO WS-YEAR.
            MOVE WS-PURCHASE-DATE(6:2) TO WS-MONTH.
            MOVE WS-PURCHASE-DATE(9:2) TO WS-DAY.
 
-      *> Validate Month (01-12)
            IF WS-MONTH < 1 OR WS-MONTH > 12
                DISPLAY 'Invalid month! Must be 01-12.'
                PERFORM GET-PURCHASE-DATE
                EXIT PARAGRAPH
            END-IF.
 
-      *> Validate Day based on Month
+           PERFORM CHECK-FUTURE-DATE.
+
            EVALUATE WS-MONTH
                WHEN 1  WHEN 3  WHEN 5  WHEN 7
                WHEN 8  WHEN 10 WHEN 12
@@ -320,16 +391,8 @@
                END-IF
            END-IF.
 
-      *> ==========================================
-      *> CHECK IF YEAR IS LEAP YEAR
-      *> ==========================================
        IS-LEAP-YEAR-CHECK.
            MOVE 'N' TO WS-LEAP-YEAR.
-
-      *> Leap year rules:
-      *> 1. Year divisible by 400 -> Leap year
-      *> 2. Year divisible by 100 -> Not leap year
-      *> 3. Year divisible by 4 -> Leap year
 
            IF FUNCTION MOD(WS-YEAR, 400) = 0
                MOVE 'Y' TO WS-LEAP-YEAR
@@ -341,6 +404,36 @@
                        MOVE 'Y' TO WS-LEAP-YEAR
                    ELSE
                        MOVE 'N' TO WS-LEAP-YEAR
+                   END-IF
+               END-IF
+           END-IF.
+
+      *> ==========================================
+      *> CHECK FUTURE DATE
+      *> ==========================================
+       CHECK-FUTURE-DATE.
+           MOVE FUNCTION CURRENT-DATE TO WS-SYSTEM-DATE.
+
+           IF WS-YEAR > WS-SYS-YEAR
+           DISPLAY 'Invalid date!Purchase date cannot be in the future.'
+               PERFORM GET-PURCHASE-DATE
+               EXIT PARAGRAPH
+           END-IF.
+
+           IF WS-YEAR = WS-SYS-YEAR
+               IF WS-MONTH > WS-SYS-MONTH
+           DISPLAY 'Invalid date!Purchase date cannot be in the future.'
+                   PERFORM GET-PURCHASE-DATE
+                   EXIT PARAGRAPH
+               END-IF
+           END-IF.
+
+           IF WS-YEAR = WS-SYS-YEAR
+               IF WS-MONTH = WS-SYS-MONTH
+                   IF WS-DAY > WS-SYS-DAY
+           DISPLAY 'Invalid date!Purchase date cannot be in the future.'
+                       PERFORM GET-PURCHASE-DATE
+                       EXIT PARAGRAPH
                    END-IF
                END-IF
            END-IF.
@@ -385,7 +478,15 @@
            DISPLAY 'Enter choice (1-3): '
            ACCEPT WS-CHOICE
 
-           EVALUATE WS-CHOICE
+           IF WS-CHOICE NOT NUMERIC
+               DISPLAY 'Invalid choice! Please enter 1, 2, or 3.'
+               PERFORM GET-COVERAGE-PERIOD
+               EXIT PARAGRAPH
+           END-IF
+
+           MOVE FUNCTION NUMVAL(WS-CHOICE) TO WS-CHOICE-NUM
+
+           EVALUATE WS-CHOICE-NUM
                WHEN 1
                    MOVE 12 TO WS-PERIOD-MONTHS
                    MOVE WS-FACTOR-12 TO WS-PERIOD-FACTOR
@@ -415,7 +516,7 @@
            END-IF.
 
       *> ==========================================
-      *> CALCULATE PREMIUM (CALL SUB-PROGRAM)
+      *> CALCULATE PREMIUM
       *> ==========================================
        CALC-PREMIUM.
            CALL 'PremiumCalculation' USING
@@ -431,10 +532,9 @@
                INTO WS-SYSTEM-DATE-STR.
 
       *> ==========================================
-      *> DISPLAY RESULT (With Currency Format)
+      *> DISPLAY RESULT
       *> ==========================================
        DISPLAY-RESULT.
-      *> Format numbers with commas
            MOVE WS-PRICE TO WS-PRICE-DISP.
            MOVE WS-EST-PREMIUM TO WS-PREMIUM-DISP.
 
@@ -454,7 +554,7 @@
            DISPLAY '-----------------------------------------'
            DISPLAY 'Estimated Premium: '
                    FUNCTION TRIM(WS-PREMIUM-DISP) ' JPY'
-           DISPLAY 'System Date     : ' WS-SYSTEM-DATE-STR
+           DISPLAY 'Applied Date     : ' WS-SYSTEM-DATE-STR
            DISPLAY 'Status          : PENDING'
            DISPLAY '========================================='.
 
