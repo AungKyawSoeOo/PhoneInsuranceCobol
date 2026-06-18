@@ -23,7 +23,7 @@
        01 PLAN-CODE            PIC X(5).
        01 PLAN-NAME            PIC X(20).
 
-       01 BASE-RATE            PIC 99V999.
+       01 BASE-RATE            PIC 99999.
        01 MAX-PAYOUT           PIC 9(8).
        01 ACTIVE-FLAG          PIC X(1).
 
@@ -32,7 +32,7 @@
 
        01 WS-NUM-INPUT         PIC X(15).
 
-       01 WS-BASE-RATE-OUT     PIC 99.999.
+       01 WS-BASE-RATE-OUT     PIC ZZZ99.
        01 WS-MAX-PAYOUT-OUT    PIC ZZZZZZZ9.
 
        01 WS-END               PIC X VALUE 'Y'.
@@ -74,7 +74,7 @@
                STRING
                    PLAN-CODE DELIMITED BY "  " ","
                    PLAN-NAME DELIMITED BY "  " ","
-                   WS-BASE-RATE-OUT  DELIMITED BY SIZE ","
+                   FUNCTION TRIM(WS-BASE-RATE-OUT) DELIMITED BY SIZE ","
                    FUNCTION TRIM(WS-MAX-PAYOUT-OUT)
                    DELIMITED BY SIZE ","
                    ACTIVE-FLAG  DELIMITED BY SIZE

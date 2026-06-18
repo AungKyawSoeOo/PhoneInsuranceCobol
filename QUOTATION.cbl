@@ -28,6 +28,13 @@
        01 WS-PERIOD-FACTOR   PIC 9V99.
        01 WS-PERIOD-MONTHS   PIC 99.
        01 WS-EST-PREMIUM     PIC 9(9)V99.
+       01 WS-PLAN-CODE       PIC X(5).
+       01 WS-PLAN-NAME       PIC X(20).
+       01 WS-PLAN-BASE-RATE  PIC 99999.
+       01 WS-PLAN-MAX-PAYOUT PIC 9(8).
+       01 WS-CURRENT-PREMIUM PIC 9(9)V99.
+       01 WS-FINAL-PREMIUM   PIC 9(9)V99.
+       01 WS-CHOICE          PIC 9(2).
        01 WS-ERROR           PIC X(60).
 
       *> ==========================================
@@ -73,7 +80,9 @@
       *> CURRENCY FORMAT FIELDS
       *> ==========================================
        01 WS-PRICE-DISP      PIC ZZZ,ZZ9.
-       01 WS-PREMIUM-DISP    PIC ZZZ,ZZ9.
+       01 WS-PREMIUM-DISP      PIC ZZZ,ZZ9.
+       01 WS-CURRENT-PREM-DISP PIC ZZZ,ZZZ,ZZ9.99.
+       01 WS-FINAL-PREM-DISP   PIC ZZZ,ZZZ,ZZ9.99.
 
       *> ==========================================
       *> DATE FIELDS
@@ -81,6 +90,9 @@
        01 WS-YEAR            PIC 9(4).
        01 WS-MONTH           PIC 9(2).
        01 WS-DAY             PIC 9(2).
+       01 WS-AGE             PIC 9(3).
+       01 WS-AGE-OUT         PIC ZZZ.
+       01 WS-USER-DOB-YEAR   PIC 9(4).
 
        01 WS-SYSTEM-DATE.
            05 WS-SYS-YEAR    PIC 9(4).
@@ -119,7 +131,21 @@
               10 WS-PERIOD-FACTOR-LK PIC 9V99.
               10 WS-PERIOD-MONTHS-LK PIC 99.
               10 WS-EST-PREMIUM-LK  PIC 9(9)V99.
+           05 WS-PLAN-DATA.
+              10 WS-PLAN-CODE-LK   PIC X(5).
+              10 WS-PLAN-NAME-LK   PIC X(20).
+              10 WS-PLAN-BASE-RATE-LK PIC 99999.
+              10 WS-PLAN-MAX-PAYOUT-LK PIC 9(8).
+              10 WS-CURRENT-PREMIUM-LK PIC 9(9)V99.
+              10 WS-FINAL-PREMIUM-LK PIC 9(9)V99.
            05 WS-SYSTEM-DATE-STR-LK PIC X(19).
+           05 WS-USER-DATA-LK.
+              10 WS-USER-NAME-LK        PIC X(50).
+              10 WS-USER-EMAIL-LK       PIC X(50).
+              10 WS-USER-PHONE-LK       PIC X(15).
+              10 WS-USER-POSTAL-CODE-LK PIC X(7).
+              10 WS-USER-ADDRESS-LK     PIC X(100).
+              10 WS-USER-DOB-LK         PIC X(8).
 
        PROCEDURE DIVISION USING LK-COMM-AREA.
 
@@ -148,6 +174,8 @@
            PERFORM GET-COVERAGE-PERIOD
            PERFORM SET-PRICE-CATEGORY
            PERFORM CALC-PREMIUM
+           PERFORM SELECT-INSURANCE-PLAN
+           PERFORM CALC-SELECTED-PLAN-PREMIUM
            PERFORM GEN-SYS-DATE
            PERFORM DISPLAY-RESULT
            PERFORM MOVE-TO-LINKAGE.
@@ -163,6 +191,12 @@
            MOVE WS-PERIOD-FACTOR  TO WS-PERIOD-FACTOR-LK
            MOVE WS-PERIOD-MONTHS  TO WS-PERIOD-MONTHS-LK
            MOVE WS-EST-PREMIUM    TO WS-EST-PREMIUM-LK
+           MOVE WS-PLAN-CODE      TO WS-PLAN-CODE-LK
+           MOVE WS-PLAN-NAME      TO WS-PLAN-NAME-LK
+           MOVE WS-PLAN-BASE-RATE TO WS-PLAN-BASE-RATE-LK
+           MOVE WS-PLAN-MAX-PAYOUT TO WS-PLAN-MAX-PAYOUT-LK
+           MOVE WS-CURRENT-PREMIUM TO WS-CURRENT-PREMIUM-LK
+           MOVE WS-FINAL-PREMIUM TO WS-FINAL-PREMIUM-LK
            MOVE WS-SYSTEM-DATE-STR TO WS-SYSTEM-DATE-STR-LK.
 
        DISPLAY-WELCOME.
@@ -522,6 +556,29 @@
            CALL 'PremiumCalculation' USING
                WS-PRICE, WS-PERIOD-FACTOR, WS-BASE-RATE, WS-EST-PREMIUM.
 
+
+      *> ==========================================
+      *> SELECT INSURANCE PLAN (Step 3-1, 3-2)
+      *> ==========================================
+       SELECT-INSURANCE-PLAN.
+           CALL 'SELECT-PLAN' USING
+               WS-PLAN-CODE,
+               WS-PLAN-NAME,
+               WS-PLAN-BASE-RATE,
+               WS-PLAN-MAX-PAYOUT,
+               WS-USER-DATA-LK.
+
+      *> ==========================================
+      *> CALCULATE SELECTED PLAN PREMIUM (Step 3-3)
+      *> ==========================================
+       CALC-SELECTED-PLAN-PREMIUM.
+           CALL 'PLAN-PREMIUM-CALC' USING
+               WS-PRICE,
+               WS-PERIOD-FACTOR,
+               WS-EST-PREMIUM,
+               WS-PLAN-BASE-RATE,
+               WS-CURRENT-PREMIUM,
+               WS-FINAL-PREMIUM.
       *> ==========================================
       *> GENERATE SYSTEM DATE
       *> ==========================================
@@ -537,6 +594,8 @@
        DISPLAY-RESULT.
            MOVE WS-PRICE TO WS-PRICE-DISP.
            MOVE WS-EST-PREMIUM TO WS-PREMIUM-DISP.
+           MOVE WS-CURRENT-PREMIUM TO WS-CURRENT-PREM-DISP.
+           MOVE WS-FINAL-PREMIUM TO WS-FINAL-PREM-DISP.
 
            DISPLAY ' '
            DISPLAY '========================================='
@@ -554,8 +613,36 @@
            DISPLAY '-----------------------------------------'
            DISPLAY 'Estimated Premium: '
                    FUNCTION TRIM(WS-PREMIUM-DISP) ' JPY'
+           DISPLAY 'Selected Plan   : ' WS-PLAN-CODE ' '
+                   WS-PLAN-NAME
+           DISPLAY 'Plan Base Rate  : ' WS-PLAN-BASE-RATE
+           DISPLAY 'Plan Max Payout : ' WS-PLAN-MAX-PAYOUT ' JPY'
+           DISPLAY 'Current Premium: '
+                   FUNCTION TRIM(WS-CURRENT-PREM-DISP) ' JPY'
+           DISPLAY 'Final Premium  : '
+                   FUNCTION TRIM(WS-FINAL-PREM-DISP) ' JPY'
            DISPLAY 'Applied Date     : ' WS-SYSTEM-DATE-STR
            DISPLAY 'Status          : PENDING'
+
+           MOVE WS-USER-DOB-LK(1:4) TO WS-USER-DOB-YEAR
+           COMPUTE WS-AGE = WS-SYS-YEAR - WS-USER-DOB-YEAR
+           MOVE WS-AGE TO WS-AGE-OUT
+           DISPLAY ' '
+           DISPLAY '========================================='
+           DISPLAY '            USER INFORMATION             '
+           DISPLAY '========================================='
+           DISPLAY 'Name            : ' FUNCTION TRIM(WS-USER-NAME-LK)
+           DISPLAY 'Email           : ' FUNCTION TRIM(WS-USER-EMAIL-LK)
+           DISPLAY 'Phone           : ' FUNCTION TRIM(WS-USER-PHONE-LK)
+           DISPLAY 'Postal Code     : ' 
+                   FUNCTION TRIM(WS-USER-POSTAL-CODE-LK)
+           DISPLAY 'Address        : ' FUNCTION TRIM(WS-USER-ADDRESS-LK)
+           DISPLAY 'Date of Birth   : ' WS-USER-DOB-LK(1:4) '-'
+                   WS-USER-DOB-LK(5:2) '-' WS-USER-DOB-LK(7:2)
+           DISPLAY 'Age       : ' FUNCTION TRIM(WS-AGE-OUT) ' years'
            DISPLAY '========================================='.
 
        END PROGRAM QUOTATION.
+
+
+

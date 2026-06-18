@@ -1,7 +1,5 @@
 Tables
 
-Plan Master Tables
-------------------
 Table: M_PLAN
 - PLAN_CODE
 - PLAN_NAME
@@ -13,3 +11,21 @@ Table: M_PLAN_COVERAGE
 - PLAN_CODE
 - COVERAGE_TYPE
 - ENABLED_FLAG
+
+Table: T_APPLICATION
+- APP_ID
+- USER_NAME
+- EMAIL
+- ADDRESS
+- DEVICE_TYPE
+- DEVICE_MODEL
+- IMEI_NUMBER
+- PREMIUM_PRICE
+- PLAN_CODE
+- STATUS
+- ACTIVATE_FLAG
+- CREATED_AT
+
+1,john,joh@gmail.com,yangon,iphone,iphone 16,12344323,30000,PLN-L,pending,N,2026-....
+2,john,joh@gmail.com,yangon,iphone,iphone 16,12344323,30000,PLN-S,pending,Y,2026-....
+
