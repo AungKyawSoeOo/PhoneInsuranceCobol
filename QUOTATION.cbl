@@ -34,7 +34,6 @@
        01 WS-PLAN-MAX-PAYOUT PIC 9(8).
        01 WS-CURRENT-PREMIUM PIC 9(9)V99.
        01 WS-FINAL-PREMIUM   PIC 9(9)V99.
-       01 WS-CHOICE          PIC 9(2).
        01 WS-ERROR           PIC X(60).
 
       *> ==========================================
