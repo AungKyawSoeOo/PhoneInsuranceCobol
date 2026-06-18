@@ -150,8 +150,8 @@
                DISPLAY "[" FUNCTION TRIM(WS-IDX-DISP) "] "
                        TB-PLAN-CODE(WS-IDX) " "
                        TB-PLAN-NAME(WS-IDX)
-                       " RATE: " FUNCTION TRIM(BASE-RATE-OUT)
-                       " MAX: " FUNCTION TRIM(MAX-PAYOUT-OUT)
+                       " BASE RATE: " FUNCTION TRIM(BASE-RATE-OUT)
+                       " MAXPAYOUT: " FUNCTION TRIM(MAX-PAYOUT-OUT)
                MOVE TB-PLAN-CODE(WS-IDX) TO WS-CURRENT-PLAN-CODE
                PERFORM SHOW-COVERAGE-FOR-PLAN
            END-PERFORM

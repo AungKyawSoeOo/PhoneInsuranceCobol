@@ -44,6 +44,13 @@
            GOBACK.
 
        GET-NAME.
+
+           DISPLAY " "
+           DISPLAY "========================================="
+           DISPLAY "       ENTER USER INFORMATION            "
+           DISPLAY "========================================="
+           DISPLAY " "
+
            MOVE 'N' TO WS-VALID-FLAG
            PERFORM UNTIL WS-VALID-FLAG = 'Y'
                DISPLAY "Enter Name (Required, max 50 chars): "
