@@ -80,8 +80,8 @@
       *> ==========================================
        01 WS-PRICE-DISP      PIC ZZZ,ZZ9.
        01 WS-PREMIUM-DISP      PIC ZZZ,ZZ9.
-       01 WS-CURRENT-PREM-DISP PIC ZZZ,ZZZ,ZZ9.99.
-       01 WS-FINAL-PREM-DISP   PIC ZZZ,ZZZ,ZZ9.99.
+       01 WS-CURRENT-PREM-DISP PIC ZZZ,ZZZ,ZZ9.
+       01 WS-FINAL-PREM-DISP   PIC ZZZ,ZZZ,ZZ9.
 
       *> ==========================================
       *> DATE FIELDS
