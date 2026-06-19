@@ -5,7 +5,7 @@
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
            SELECT DEVICE-FILE ASSIGN TO
-               './files/device-master.txt'
+               '../files/device-master.txt'
                ORGANIZATION IS LINE SEQUENTIAL
                FILE STATUS IS WS-FILE-STATUS.
 
