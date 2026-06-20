@@ -4,7 +4,7 @@
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        01  WS-COMM-AREA.
-
+           05 WS-CONTINUE           PIC X(10) VALUE SPACES.
            05 WS-DEVICE-DATA.
               10 WS-IMEI            PIC X(15)   VALUE SPACES.
               10 WS-DEVICE-TYPE     PIC X(10)   VALUE SPACES.

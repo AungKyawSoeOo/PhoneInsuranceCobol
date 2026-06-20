@@ -117,7 +117,7 @@
       *> ==========================================
        LINKAGE SECTION.
        01  LK-COMM-AREA.
-           05 WS-CONTINUE           PIC X.
+           05 WS-CONTINUE           PIC X(10).
            05 WS-DEVICE-DATA.
               10 WS-IMEI-LK         PIC X(15).
               10 WS-DEVICE-TYPE-LK  PIC X(10).
@@ -151,6 +151,7 @@
        MAIN-PROCEDURE.
            PERFORM LOAD-DEVICE-MASTER
            PERFORM GET-ONE-QUOTATION
+      
            EXIT PROGRAM.
 
        LOAD-DEVICE-MASTER.
@@ -176,6 +177,7 @@
            PERFORM SELECT-INSURANCE-PLAN
            PERFORM CALC-SELECTED-PLAN-PREMIUM
            PERFORM GEN-SYS-DATE
+           CALL 'SAVE-APPLICATION' USING LK-COMM-AREA
            PERFORM DISPLAY-RESULT
            PERFORM MOVE-TO-LINKAGE.
 
@@ -641,7 +643,38 @@
            DISPLAY 'Age       : ' FUNCTION TRIM(WS-AGE-OUT) ' years'
            DISPLAY '========================================='.
 
+           PERFORM DISPLAY-COMPLETED-SCREEN.
+           DISPLAY-COMPLETED-SCREEN.
+           MOVE WS-FINAL-PREMIUM TO WS-FINAL-PREM-DISP.
+
+           
+           DISPLAY "==================================================="
+           DISPLAY "==================================================="
+           DISPLAY "      APPLICATION SUBMISSION SUCCESS       "
+           DISPLAY "==================================================="
+           DISPLAY "Fields:"
+           DISPLAY "   Application ID    : " 
+           FUNCTION TRIM(WS-CONTINUE)
+           DISPLAY "   Applicant Name    : " 
+           FUNCTION TRIM(WS-USER-NAME-LK)
+           DISPLAY "   Plan Code         : " 
+           FUNCTION TRIM(WS-PLAN-CODE)
+           DISPLAY "   Estimated Premium : " 
+           FUNCTION TRIM(WS-FINAL-PREM-DISP) " JPY"
+           DISPLAY "   Application Status: PENDING"
+           DISPLAY " "
+           DISPLAY "Message:"
+           DISPLAY "  'Your application has been successful. The"
+           DISPLAY "   underwriting result will be processed by"
+           DISPLAY "   the nightly batch.'"
+           DISPLAY "--------------------------------------------------".
+
        END PROGRAM QUOTATION.
+
+
+       
+
+
 
 
 
