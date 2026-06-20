@@ -177,9 +177,9 @@
            PERFORM SELECT-INSURANCE-PLAN
            PERFORM CALC-SELECTED-PLAN-PREMIUM
            PERFORM GEN-SYS-DATE
+           PERFORM MOVE-TO-LINKAGE
            CALL 'SAVE-APPLICATION' USING LK-COMM-AREA
-           PERFORM DISPLAY-RESULT
-           PERFORM MOVE-TO-LINKAGE.
+           PERFORM DISPLAY-RESULT.
 
        MOVE-TO-LINKAGE.
            MOVE WS-IMEI           TO WS-IMEI-LK
@@ -641,17 +641,14 @@
            DISPLAY 'Date of Birth   : ' WS-USER-DOB-LK(1:4) '-'
                    WS-USER-DOB-LK(5:2) '-' WS-USER-DOB-LK(7:2)
            DISPLAY 'Age       : ' FUNCTION TRIM(WS-AGE-OUT) ' years'
-           DISPLAY '========================================='.
 
            PERFORM DISPLAY-COMPLETED-SCREEN.
            DISPLAY-COMPLETED-SCREEN.
            MOVE WS-FINAL-PREMIUM TO WS-FINAL-PREM-DISP.
 
-           
-           DISPLAY "==================================================="
-           DISPLAY "==================================================="
-           DISPLAY "      APPLICATION SUBMISSION SUCCESS       "
-           DISPLAY "==================================================="
+           DISPLAY "========================================="
+           DISPLAY "      APPLICATION SUBMISSION SUCCESS     "
+           DISPLAY "========================================="
            DISPLAY "Fields:"
            DISPLAY "   Application ID    : " 
            FUNCTION TRIM(WS-CONTINUE)
