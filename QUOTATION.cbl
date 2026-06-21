@@ -150,6 +150,7 @@
               10 WS-USER-ADDRESS-LK     PIC X(100).
               10 WS-USER-DOB-LK         PIC X(8).
 
+
        PROCEDURE DIVISION USING LK-COMM-AREA.
 
        MAIN-PROCEDURE.
@@ -597,6 +598,30 @@
       *> DISPLAY RESULT
       *> ==========================================
        DISPLAY-RESULT.
+
+           IF WS-CONTINUE = "DUP"
+               DISPLAY ' '
+               DISPLAY '============================================='
+               DISPLAY '   APPLICATION REJECTED: DUPLICATE SERVICE  '
+               DISPLAY '============================================='
+               DISPLAY ' Error: Active application already exists'
+               DISPLAY ' for IMEI: ' FUNCTION TRIM(WS-IMEI)
+               DISPLAY ' under Plan: ' FUNCTION TRIM(WS-PLAN-CODE)
+               DISPLAY ' Multiple active plans are prohibited.'
+               DISPLAY '---------------------------------------------'
+               EXIT PARAGRAPH
+           END-IF.
+
+           IF WS-CONTINUE = "REJ"
+               DISPLAY ' '
+               DISPLAY '============================================='
+               DISPLAY '        APPLICATION CANCELLED BY USER        '
+               DISPLAY '============================================='
+               DISPLAY ' Process terminated without saving changes. '
+               DISPLAY '---------------------------------------------'
+               EXIT PARAGRAPH
+           END-IF.
+           
            MOVE WS-PRICE TO WS-PRICE-DISP.
            MOVE WS-EST-PREMIUM TO WS-PREMIUM-DISP.
            MOVE WS-CURRENT-PREMIUM TO WS-CURRENT-PREM-DISP.
@@ -649,7 +674,10 @@
                    WS-USER-DOB-LK(5:2) '-' WS-USER-DOB-LK(7:2)
            DISPLAY 'Age       : ' FUNCTION TRIM(WS-AGE-OUT) ' years'
 
-           PERFORM DISPLAY-COMPLETED-SCREEN.
+           IF WS-CONTINUE NOT = "DUP"
+               PERFORM DISPLAY-COMPLETED-SCREEN
+           END-IF
+           GOBACK.
            DISPLAY-COMPLETED-SCREEN.
            MOVE WS-FINAL-PREMIUM TO WS-FINAL-PREM-DISP.
 
@@ -672,6 +700,7 @@
            DISPLAY "   underwriting result will be processed by"
            DISPLAY "   the nightly batch.'"
            DISPLAY "--------------------------------------------------".
+
 
        END PROGRAM QUOTATION.
 
