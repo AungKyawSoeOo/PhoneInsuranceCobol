@@ -647,7 +647,8 @@
            DISPLAY 'Address         : 'FUNCTION TRIM(WS-USER-ADDRESS-LK)
            DISPLAY 'Date of Birth   : ' WS-USER-DOB-LK(1:4) '-'
                    WS-USER-DOB-LK(5:2) '-' WS-USER-DOB-LK(7:2)
-           DISPLAY 'Age       : ' FUNCTION TRIM(WS-AGE-OUT) ' years'
+           DISPLAY 'Age             : ' FUNCTION TRIM(WS-AGE-OUT)
+                                      ' years'
 
            PERFORM DISPLAY-COMPLETED-SCREEN.
            DISPLAY-COMPLETED-SCREEN.
@@ -656,21 +657,21 @@
            DISPLAY "========================================="
            DISPLAY "      APPLICATION SUBMISSION SUCCESS     "
            DISPLAY "========================================="
-           DISPLAY "Fields:"
-           DISPLAY "   Application ID    : " 
+           DISPLAY "Fields          :"
+           DISPLAY "Application ID  : " 
            FUNCTION TRIM(WS-CONTINUE)
-           DISPLAY "   Applicant Name    : " 
+           DISPLAY "Applicant Name  : " 
            FUNCTION TRIM(WS-USER-NAME-LK)
-           DISPLAY "   Plan Code         : " 
+           DISPLAY "Plan Code       : " 
            FUNCTION TRIM(WS-PLAN-CODE)
-           DISPLAY "   Estimated Premium : " 
+           DISPLAY "Final Premium   : " 
            FUNCTION TRIM(WS-FINAL-PREM-DISP) " JPY"
-           DISPLAY "   Application Status: PENDING"
+           DISPLAY "Application Status: PENDING"
            DISPLAY " "
            DISPLAY "Message:"
-           DISPLAY "  'Your application has been successful. The"
-           DISPLAY "   underwriting result will be processed by"
-           DISPLAY "   the nightly batch.'"
+           DISPLAY "       'Your application has been successful."
+           DISPLAY "        The underwriting result will be processed"
+           DISPLAY "        by the nightly batch.'"
            DISPLAY "--------------------------------------------------".
 
        END PROGRAM QUOTATION.
