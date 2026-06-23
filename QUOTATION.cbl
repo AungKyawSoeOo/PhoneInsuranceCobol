@@ -46,6 +46,7 @@
       *> DISPLAY FIELDS (For removing leading zeros)
       *> ==========================================
        01 WS-DISP-COUNT     PIC Z9.
+       01 WS-DECL-SCORE-DISP    PIC Z(3)9.
 
       *> ==========================================
       *> DEVICE MASTER VARIABLES
@@ -641,8 +642,9 @@
            DISPLAY 'Applied Date     : ' WS-SYSTEM-DATE-STR
            DISPLAY 'Status           : PENDING'
            DISPLAY '-----------------------------------------'
-           DISPLAY 'Declaration Score  : ' WS-DECL-TOTAL-SCORE
-           DISPLAY 'Final Status       : ' WS-DECL-FINAL-STATUS
+           MOVE WS-DECL-TOTAL-SCORE TO WS-DECL-SCORE-DISP
+           DISPLAY 'Declaration Score  : ' 
+                   FUNCTION TRIM(WS-DECL-SCORE-DISP)
 
            MOVE WS-USER-DOB-LK(1:4) TO WS-USER-DOB-YEAR
            COMPUTE WS-AGE = WS-SYS-YEAR - WS-USER-DOB-YEAR

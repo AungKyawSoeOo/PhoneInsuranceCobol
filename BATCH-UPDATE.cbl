@@ -69,7 +69,13 @@
        01 WS-DETAIL-EOF          PIC X VALUE 'N'.
            88 WS-END-OF-DETAIL   VALUE 'Y'.
        01 WS-RECORD-COUNT        PIC 99 VALUE 0.
-
+       
+       01 WS-PROCESS-COUNT       PIC 99 VALUE 0.
+       01 WS-DISP-SCORE          PIC Z(3)9. 
+             
+           
+       01 WS-DETAIL-FOUND        PIC X VALUE 'N'.
+           88 WS-FOUND-DETAIL    VALUE 'Y'.
        PROCEDURE DIVISION.
 
        MAIN-PROCEDURE.
@@ -79,7 +85,7 @@
 
            PERFORM PROCESS-ALL-APPLICATIONS
            DISPLAY "Batch update completed successfully."
-           DISPLAY "Total records processed: " WS-RECORD-COUNT
+           DISPLAY "Total records processed: " WS-PROCESS-COUNT
            EXIT PROGRAM.
 
       
@@ -151,9 +157,9 @@
            IF WS-CSV-ACTIVE-FLAG = 'Y' AND
               WS-CSV-STATUS = 'PENDING'
 
+               ADD 1 TO WS-PROCESS-COUNT
                PERFORM CALCULATE-SCORE-FROM-DETAIL
                PERFORM DETERMINE-FINAL-STATUS
-
       *> ==========================================
       *> Plan Coverage testing
       *> ==========================================
@@ -179,10 +185,10 @@
                END-EVALUATE
 
                MOVE WS-FINAL-STATUS TO WS-CSV-STATUS
-              
+               MOVE WS-TOTAL-SCORE TO WS-DISP-SCORE
 
                DISPLAY "Processed Application: " WS-CSV-APP-ID
-                       " Score: " WS-TOTAL-SCORE
+                       " Score: " FUNCTION TRIM(WS-DISP-SCORE)
                        " Status: " WS-FINAL-STATUS
            END-IF.
 
@@ -213,6 +219,7 @@
            MOVE 'N' TO WS-WATER-FLG
            MOVE 'N' TO WS-OLD-FLG
            MOVE 'N' TO WS-DETAIL-EOF
+           MOVE 'N' TO WS-DETAIL-FOUND  
 
            OPEN INPUT DECL-DETAIL
            IF WS-DETAIL-STATUS NOT = '00'
@@ -250,7 +257,9 @@
                IF WS-SCREEN-FLG = 'Y' ADD 30 TO WS-TOTAL-SCORE END-IF
                IF WS-WATER-FLG  = 'Y' ADD 40 TO WS-TOTAL-SCORE END-IF
                IF WS-OLD-FLG    = 'Y' ADD 20 TO WS-TOTAL-SCORE END-IF
+               MOVE 'Y' TO WS-DETAIL-FOUND
            END-IF.
+
 
       *> ==========================================
       *> Assigning Final Status based on scores
