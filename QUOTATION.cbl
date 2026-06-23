@@ -598,8 +598,13 @@
       *> DISPLAY RESULT
       *> ==========================================
        DISPLAY-RESULT.
+           EVALUATE WS-CONTINUE
+               WHEN "BLK"
+                   *> System-blocked: Exit the paragraph immediately 
+                   *> to prevent any further displays.
+                   EXIT PARAGRAPH
 
-           IF WS-CONTINUE = "DUP"
+           WHEN "DUP"
                DISPLAY ' '
                DISPLAY '============================================='
                DISPLAY '   APPLICATION REJECTED: DUPLICATE SERVICE  '
@@ -610,9 +615,9 @@
                DISPLAY ' Multiple active plans are prohibited.'
                DISPLAY '---------------------------------------------'
                EXIT PARAGRAPH
-           END-IF.
+           
 
-           IF WS-CONTINUE = "REJ"
+           WHEN "REJ"
                DISPLAY ' '
                DISPLAY '============================================='
                DISPLAY '        APPLICATION CANCELLED BY USER        '
@@ -620,7 +625,7 @@
                DISPLAY ' Process terminated without saving changes. '
                DISPLAY '---------------------------------------------'
                EXIT PARAGRAPH
-           END-IF.
+           END-EVALUATE.
            
            MOVE WS-PRICE TO WS-PRICE-DISP.
            MOVE WS-EST-PREMIUM TO WS-PREMIUM-DISP.
@@ -691,7 +696,7 @@
            FUNCTION TRIM(WS-USER-NAME-LK)
            DISPLAY "   Plan Code         : " 
            FUNCTION TRIM(WS-PLAN-CODE)
-           DISPLAY "   Estimated Premium : " 
+           DISPLAY "   Total Premium : " 
            FUNCTION TRIM(WS-FINAL-PREM-DISP) " JPY"
            DISPLAY "   Application Status: PENDING"
            DISPLAY " "

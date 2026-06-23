@@ -36,6 +36,7 @@
        01 WS-DUPLICATE-FLAG        PIC X VALUE 'N'.
        01 WS-FILE-IMEI             PIC X(15).
        01 WS-FILE-PLAN             PIC X(5).
+       01  WS-FILE-STATUS-VAL      PIC X(10).
        01 WS-FILE-DUMMY            PIC X(100).
 
        01 WS-CHG-CHOICE            PIC X VALUE SPACES.
@@ -81,12 +82,18 @@
 
        MAIN-PROCEDURE.
            PERFORM DETERMINE-NEXT-APP-ID
-           EVALUATE WS-DUPLICATE-FLAG
-               WHEN 'E'  *> Case 1: Exact Duplicate
+           EVALUATE WS-DUPLICATE-FLAG        
+               WHEN 'E'
                    MOVE "DUP" TO LK-CONTINUE
-               WHEN 'C'  *> Case 2: Same IMEI, Different Plan
+               WHEN 'P'
+                   MOVE "BLK" TO LK-CONTINUE
+                   DISPLAY ' '
+                   DISPLAY 
+                   'Plan change is not allowed because the existing'
+                   DISPLAY 'application is still in PENDING status.'
+               WHEN 'C'
                    PERFORM HANDLE-PLAN-CHANGE-PROMPT
-               WHEN 'N'  *> No Duplicate Found
+               WHEN 'N'
                    PERFORM WRITE-APPLICATION-RECORD
            END-EVALUATE
            EXIT PROGRAM.
@@ -112,7 +119,7 @@
                                         WS-FILE-IMEI    *> IMEI_NUMBER
                                         WS-FILE-DUMMY   *> PREMIUM_PRICE
                                         WS-FILE-PLAN    *> PLAN_CODE
-                                        WS-FILE-DUMMY   *> STATUS
+                                        WS-FILE-STATUS-VAL   *> STATUS
                                         WS-APP-ACTIVATE-FLAG
                                         WS-FILE-DUMMY   *> CREATED_AT
                                
@@ -128,6 +135,10 @@
                                       FUNCTION TRIM(LK-PLAN-CODE)
                                        MOVE 'E' TO WS-DUPLICATE-FLAG 
                                    ELSE
+                                       IF FUNCTION 
+                                   TRIM(WS-FILE-STATUS-VAL) = "PENDING"
+                                           MOVE 'P' TO WS-DUPLICATE-FLAG
+                                       ELSE
                                         MOVE 'C' TO WS-DUPLICATE-FLAG
                                         MOVE WS-TEMP-RECORD
                                           TO WS-OLD-RECORD-TO-UPD
