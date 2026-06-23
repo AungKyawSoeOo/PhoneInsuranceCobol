@@ -116,6 +116,9 @@
       *> ==========================================
        01 PLAN-BASE-RATE     PIC ZZZ99.
        01 PLAN-MAX-RATE      PIC ZZZZZZZ9.
+       01 WS-DECL-APP-ID         PIC 9(10).
+       01 WS-DECL-FINAL-STATUS   PIC X(15).
+       01 WS-DECL-TOTAL-SCORE    PIC 9(3).
       *> ==========================================
       *> LINKAGE SECTION
       *> ==========================================
@@ -149,7 +152,7 @@
               10 WS-USER-POSTAL-CODE-LK PIC X(7).
               10 WS-USER-ADDRESS-LK     PIC X(100).
               10 WS-USER-DOB-LK         PIC X(8).
-
+       
        PROCEDURE DIVISION USING LK-COMM-AREA.
 
        MAIN-PROCEDURE.
@@ -183,6 +186,12 @@
            PERFORM GEN-SYS-DATE
            PERFORM MOVE-TO-LINKAGE
            CALL 'SAVE-APPLICATION' USING LK-COMM-AREA
+           MOVE WS-CONTINUE TO WS-DECL-APP-ID
+           CALL 'DECLARATION-READER' USING WS-DECL-APP-ID,
+                                           WS-DECL-FINAL-STATUS,
+                                           WS-DECL-TOTAL-SCORE
+
+           
            PERFORM DISPLAY-RESULT.
 
        MOVE-TO-LINKAGE.
@@ -631,6 +640,9 @@
                    FUNCTION TRIM(WS-FINAL-PREM-DISP) ' JPY'
            DISPLAY 'Applied Date     : ' WS-SYSTEM-DATE-STR
            DISPLAY 'Status           : PENDING'
+           DISPLAY '-----------------------------------------'
+           DISPLAY 'Declaration Score  : ' WS-DECL-TOTAL-SCORE
+           DISPLAY 'Final Status       : ' WS-DECL-FINAL-STATUS
 
            MOVE WS-USER-DOB-LK(1:4) TO WS-USER-DOB-YEAR
            COMPUTE WS-AGE = WS-SYS-YEAR - WS-USER-DOB-YEAR
@@ -674,11 +686,10 @@
            DISPLAY "--------------------------------------------------".
 
        END PROGRAM QUOTATION.
-
-
        
 
 
+       
 
 
 
