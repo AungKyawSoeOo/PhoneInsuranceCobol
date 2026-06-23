@@ -36,7 +36,7 @@
        PROCEDURE DIVISION.
        MAIN-ORCHESTRATOR.
                CALL 'QUOTATION' USING WS-COMM-AREA
-      *    Delete display after project finished
+      
                DISPLAY "User Name from USER-INFO: " WS-USER-NAME
                DISPLAY "PRICE FROM MAIN" WS-PRICE
                DISPLAY "purchase date FROM MAIN" WS-PURCHASE-DATE
