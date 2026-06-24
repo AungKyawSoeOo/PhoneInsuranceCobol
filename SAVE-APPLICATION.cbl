@@ -25,7 +25,7 @@
        01 WS-NEXT-ID               PIC 9(10) VALUE 1.
        01 WS-UNSTRING-ID           PIC X(10).
 
-
+       01 WS-FINAL-PREMIUM-DISP    PIC ZZZ,ZZZ,ZZ9.
        LINKAGE SECTION.
        01 LK-COMM-AREA.
            05 LK-CONTINUE           PIC X(10).
@@ -44,7 +44,7 @@
            05 LK-PLAN-DATA.
               10 LK-PLAN-CODE       PIC X(5).
               10 LK-PLAN-NAME       PIC X(20).
-              10 LK-PLAN-BASE-RATE   PIC 99999.
+              10 LK-PLAN-BASE-RATE  PIC 99999.
               10 LK-PLAN-MAX-PAYOUT PIC 9(8).
               10 LK-CURRENT-PREMIUM PIC 9(9)V99.
               10 LK-FINAL-PREMIUM   PIC 9(9)V99.
@@ -99,6 +99,7 @@
            END-IF.
 
            MOVE SPACES TO WS-OUT-LINE
+           MOVE LK-FINAL-PREMIUM TO WS-FINAL-PREMIUM-DISP.
            
            STRING 
                FUNCTION TRIM(LK-CONTINUE) DELIMITED BY SIZE ","
@@ -106,6 +107,10 @@
                FUNCTION TRIM(LK-USER-EMAIL) DELIMITED BY SIZE ","
                FUNCTION TRIM(LK-USER-ADDRESS) DELIMITED BY SIZE ","
                FUNCTION TRIM(LK-DEVICE-TYPE) DELIMITED BY SIZE ","
+               FUNCTION TRIM(LK-DEVICE-MODEL) DELIMITED BY SIZE ","
+               FUNCTION TRIM(LK-IMEI) DELIMITED BY SIZE ","
+               FUNCTION TRIM(WS-FINAL-PREMIUM-DISP) DELIMITED BY SIZE
+                                               "JPY,"
                FUNCTION TRIM(LK-PLAN-CODE) DELIMITED BY SIZE ","
                FUNCTION TRIM(WS-STATUS-PENDING) DELIMITED BY SIZE ","
                'Y'                                DELIMITED BY SIZE ","

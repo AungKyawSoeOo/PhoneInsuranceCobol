@@ -121,6 +121,17 @@
        01 WS-DECL-FINAL-STATUS   PIC X(15).
        01 WS-DECL-TOTAL-SCORE    PIC 9(3).
       *> ==========================================
+      *> Displaying chosen plan coverages
+      *> ==========================================
+       01 WS-COVERAGE-TABLE.
+           05 WS-COV-COUNT        PIC 99.
+           05 WS-COV-ENTRY OCCURS 10 TIMES.
+               10 WS-COV-TYPE     PIC X(20).
+               10 WS-COV-FLAG     PIC X(1).
+       01 WS-COV-YES-NO           PIC X(3).
+       01 WS-K                    PIC 99.
+
+      *> ==========================================
       *> LINKAGE SECTION
       *> ==========================================
        LINKAGE SECTION.
@@ -581,8 +592,8 @@
                WS-PLAN-NAME,
                WS-PLAN-BASE-RATE,
                WS-PLAN-MAX-PAYOUT,
-               WS-USER-DATA-LK.
-
+               WS-USER-DATA-LK,
+               WS-COVERAGE-TABLE.
       *> ==========================================
       *> CALCULATE SELECTED PLAN PREMIUM (Step 3-3)
       *> ==========================================
@@ -678,6 +689,17 @@
            FUNCTION TRIM(WS-USER-NAME-LK)
            DISPLAY "Plan Code       : " 
            FUNCTION TRIM(WS-PLAN-CODE)
+           DISPLAY FUNCTION TRIM(WS-PLAN-CODE) "'s Coverage details:"
+           PERFORM VARYING WS-K FROM 1 BY 1
+               UNTIL WS-K > WS-COV-COUNT
+               IF WS-COV-FLAG(WS-K) = 'Y'
+                   MOVE 'YES' TO WS-COV-YES-NO
+               ELSE
+                   MOVE 'NO'  TO WS-COV-YES-NO
+               END-IF
+               DISPLAY "  - " FUNCTION TRIM(WS-COV-TYPE(WS-K))
+                              ": " WS-COV-YES-NO
+           END-PERFORM
            DISPLAY "Final Premium   : " 
            FUNCTION TRIM(WS-FINAL-PREM-DISP) " JPY"
            DISPLAY "Application Status: PENDING"

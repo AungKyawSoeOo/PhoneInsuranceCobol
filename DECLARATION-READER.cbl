@@ -77,6 +77,9 @@
        01 WS-CSV-USER-EMAIL      PIC X(50).
        01 WS-CSV-USER-ADDRESS    PIC X(100).
        01 WS-CSV-DEVICE-TYPE     PIC X(10).
+       01 WS-CSV-DEVICE-MODEL    PIC X(20).
+       01 WS-CSV-IMEI-NUMBER     PIC X(15).
+       01 WS-CSV-PREMIUM-PRICE   PIC 9(6).
        01 WS-CSV-PLAN-CODE       PIC X(5).
        01 WS-CSV-STATUS          PIC X(15).
        01 WS-CSV-ACTIVE-FLAG     PIC X(1).
@@ -196,7 +199,7 @@
            END-PERFORM.
            PERFORM WRITE-DECLARATION-DETAIL.
       *> ==========================================
-      *> ၃။ DETAIL CSV (T_APPLICATION_DECL) 
+      *> DETAIL CSV (T_APPLICATION_DECL) 
       *> ==========================================
               WRITE-DECLARATION-DETAIL.
            OPEN EXTEND DECL-DETAIL
@@ -340,6 +343,9 @@
                     WS-CSV-USER-EMAIL
                     WS-CSV-USER-ADDRESS
                     WS-CSV-DEVICE-TYPE
+                    WS-CSV-DEVICE-MODEL
+                    WS-CSV-IMEI-NUMBER
+                    WS-CSV-PREMIUM-PRICE
                     WS-CSV-PLAN-CODE
                     WS-CSV-STATUS
                     WS-CSV-ACTIVE-FLAG
@@ -356,6 +362,9 @@
                FUNCTION TRIM(WS-CSV-USER-EMAIL) DELIMITED BY SIZE ","
                FUNCTION TRIM(WS-CSV-USER-ADDRESS) DELIMITED BY SIZE ","
                FUNCTION TRIM(WS-CSV-DEVICE-TYPE) DELIMITED BY SIZE ","
+               FUNCTION TRIM(WS-CSV-DEVICE-MODEL) DELIMITED BY SIZE ","
+               FUNCTION TRIM(WS-CSV-IMEI-NUMBER) DELIMITED BY SIZE ","
+               FUNCTION TRIM(WS-CSV-PREMIUM-PRICE) DELIMITED BY SIZE ","
                FUNCTION TRIM(WS-CSV-PLAN-CODE)  DELIMITED BY SIZE ","
                FUNCTION TRIM(WS-CSV-STATUS)     DELIMITED BY SIZE ","
                FUNCTION TRIM(WS-CSV-ACTIVE-FLAG) DELIMITED BY SIZE ","

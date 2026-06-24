@@ -65,12 +65,20 @@
            05 LK-USER-POSTAL-CODE PIC X(7).
            05 LK-USER-ADDRESS     PIC X(100).
            05 LK-USER-DOB         PIC X(8).
+       
+      *New edited-->
+       01 LK-COVERAGE-TABLE.
+           05 LK-COV-COUNT        PIC 99.
+           05 LK-COV-ENTRY OCCURS 10 TIMES.
+               10 LK-COV-TYPE     PIC X(20).
+               10 LK-COV-FLAG     PIC X(1).
 
        PROCEDURE DIVISION USING LK-PLAN-CODE,
                                 LK-PLAN-NAME,
                                 LK-PLAN-BASE-RATE,
                                 LK-PLAN-MAX-PAYOUT,
-                                LK-USER-DATA.
+                                LK-USER-DATA,
+                                LK-COVERAGE-TABLE. 
 
        MAIN-PROCEDURE.
            PERFORM LOAD-ACTIVE-PLANS
@@ -159,6 +167,8 @@
            DISPLAY "-----------------------------------------".
 
        SHOW-COVERAGE-FOR-PLAN.
+      * new edited-->     
+           MOVE 0 TO LK-COV-COUNT 
            MOVE 'N' TO WS-COVERAGE-FOUND
            MOVE 'N' TO WS-COV-EOF
 
@@ -185,6 +195,11 @@
                                MOVE 'NO' TO WS-YES-NO
                            END-IF
                            DISPLAY "      - " WS-COV-TYPE ": " WS-YES-NO
+      *new edited --> 
+                           ADD 1 TO LK-COV-COUNT
+                           MOVE WS-COV-TYPE TO LK-COV-TYPE(LK-COV-COUNT)
+                           MOVE WS-COV-ENABLED-FLAG TO 
+                                               LK-COV-FLAG(LK-COV-COUNT)
                        END-IF
                END-READ
            END-PERFORM
