@@ -4,3 +4,7 @@ Compile "cobc -x -j BATCH-UPDATE.cbl -o bin/BATCH-UPDATE.exe
 Run "bin\MAIN.exe" and Add user's data
 Run schedule batch with "schtasks /create /tn "BatchUpdateTask" /tr "C:\Users\Dell\PhoneInsuranceCobol\run_batch.bat" /sc daily /st 18:12"
 Check updated "Approved/Conditional/Rejected" Result in T_APPLICATION.CSV
+
+change screen mode
+--------------
+chcp 65001
