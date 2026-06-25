@@ -88,10 +88,6 @@
                    MOVE "DUP" TO LK-CONTINUE
                WHEN 'P'
                    MOVE "BLK" TO LK-CONTINUE
-                   DISPLAY ' '
-                   DISPLAY 
-                   'Plan change is not allowed because the existing'
-                   DISPLAY 'application is still in PENDING status.'
                WHEN 'C'
                    PERFORM HANDLE-PLAN-CHANGE-PROMPT
                WHEN 'N'

@@ -36,11 +36,6 @@
        PROCEDURE DIVISION.
        MAIN-ORCHESTRATOR.
                CALL 'QUOTATION' USING WS-COMM-AREA
-      
-               DISPLAY "User Name from USER-INFO: " WS-USER-NAME
-               DISPLAY "PRICE FROM MAIN" WS-PRICE
-               DISPLAY "purchase date FROM MAIN" WS-PURCHASE-DATE
-               DISPLAY "DEVICE TYPE"WS-DEVICE-TYPE.
            STOP RUN.
 
        END PROGRAM MAIN-PROGRAM.

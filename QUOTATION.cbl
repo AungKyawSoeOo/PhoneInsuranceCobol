@@ -199,9 +199,15 @@
            PERFORM MOVE-TO-LINKAGE
            CALL 'SAVE-APPLICATION' USING LK-COMM-AREA
            MOVE WS-CONTINUE TO WS-DECL-APP-ID
-           CALL 'DECLARATION-READER' USING WS-DECL-APP-ID,
-                                           WS-DECL-FINAL-STATUS,
-                                           WS-DECL-TOTAL-SCORE
+           IF WS-CONTINUE NOT = 'BLK' AND WS-CONTINUE NOT = 'DUP'
+               CALL 'DECLARATION-READER' USING WS-DECL-APP-ID,
+                                               WS-DECL-FINAL-STATUS,
+                                               WS-DECL-TOTAL-SCORE
+               PERFORM DISPLAY-RESULT
+           ELSE
+               DISPLAY 'Plan change is not allowed because the existing'
+               DISPLAY 'application is still in PENDING status.'
+           END-IF.
 
            
            PERFORM DISPLAY-RESULT.
