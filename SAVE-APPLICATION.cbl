@@ -25,7 +25,7 @@
        01 WS-NEXT-ID               PIC 9(10) VALUE 1.
        01 WS-UNSTRING-ID           PIC X(10).
 
-       01 WS-FINAL-PREMIUM-DISP    PIC ZZZ,ZZZ,ZZ9.
+       01 WS-FINAL-PREMIUM-DISP    PIC ZZZZZZZZ9.
        LINKAGE SECTION.
        01 LK-COMM-AREA.
            05 LK-CONTINUE           PIC X(10).
