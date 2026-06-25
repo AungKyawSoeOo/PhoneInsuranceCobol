@@ -2,9 +2,11 @@ SCHEDULE Batch RUN FOR WINDOWS USER
 
 Compile "cobc -x -j BATCH-UPDATE.cbl -o bin/BATCH-UPDATE.exe
 Run "bin\MAIN.exe" and Add user's data
-Run schedule batch with "schtasks /create /tn "BatchUpdateTask" /tr "C:\Users\Dell\PhoneInsuranceCobol\run_batch.bat" /sc daily /st 18:12"
+Run schedule batch with ".\run_batch.bat" 
+You can change 3 minutes to 5 minutes in "run_batch.bat" folder and change from "/sc minute /mo 3 /f" to "/sc minute /mo 5 /f"
 Check updated "Approved/Conditional/Rejected" Result in T_APPLICATION.CSV
-
+You can check next schedule time with "schtasks /query /tn "BatchUpdateTask" /v /fo list"
+You can delete back using "schtasks /delete /tn "BatchUpdateTask" /f"
 change screen mode
 --------------
 chcp 65001
