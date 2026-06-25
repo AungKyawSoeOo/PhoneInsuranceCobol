@@ -19,6 +19,11 @@
                ORGANIZATION IS LINE SEQUENTIAL
                FILE STATUS IS WS-DETAIL-STATUS.
 
+           SELECT OPTIONAL DECL-MASTER ASSIGN TO
+               "./files/M_DECLARATION.CSV"
+               ORGANIZATION IS LINE SEQUENTIAL
+               FILE STATUS IS WS-MASTER-STATUS.
+
        DATA DIVISION.
        FILE SECTION.
        FD APP-FILE.
@@ -30,11 +35,15 @@
        FD DECL-DETAIL.
        01 DETAIL-LINE            PIC X(200).
 
+       FD DECL-MASTER.
+       01 MASTER-LINE            PIC X(100).
+
        WORKING-STORAGE SECTION.
       *> File Status
        01 WS-FILE-STATUS         PIC XX.
        01 WS-TEMP-STATUS         PIC XX.
        01 WS-DETAIL-STATUS       PIC XX.
+       01 WS-MASTER-STATUS       PIC XX.
        01 WS-EOF                 PIC X VALUE 'N'.
            88 WS-END-OF-FILE     VALUE 'Y'.
 
@@ -44,6 +53,9 @@
        01 WS-CSV-USER-EMAIL      PIC X(50).
        01 WS-CSV-USER-ADDRESS    PIC X(100).
        01 WS-CSV-DEVICE-TYPE     PIC X(10).
+       01 WS-CSV-DEVICE-MODEL    PIC X(20).
+       01 WS-CSV-IMEI-NUMBER     PIC X(15).
+       01 WS-CSV-PREMIUM-PRICE   PIC 9(6).
        01 WS-CSV-PLAN-CODE       PIC X(5).
        01 WS-CSV-STATUS          PIC X(15).
        01 WS-CSV-ACTIVE-FLAG     PIC X(1).
@@ -51,16 +63,20 @@
 
       *> Detail Variables
        01 WS-DET-APP-ID          PIC X(10).
-       01 WS-DET-DAMAGE          PIC X(1).
-       01 WS-DET-SCREEN          PIC X(1).
-       01 WS-DET-WATER           PIC X(1).
-       01 WS-DET-OLD             PIC X(1).
+       01 WS-ANSWERS-TABLE.
+           05 WS-ANS OCCURS 10 TIMES PIC X(1) VALUE 'N'.
 
-      *> Flag Variables 
-       01 WS-DAMAGE-FLG          PIC X(1).
-       01 WS-SCREEN-FLG          PIC X(1).
-       01 WS-WATER-FLG           PIC X(1).
-       01 WS-OLD-FLG             PIC X(1).
+       01 WS-MST-CODE            PIC X(5).
+       01 WS-MST-QUESTION        PIC X(100).
+       01 WS-MST-WEIGHT          PIC 99.
+       01 WS-QUESTION-TABLE.
+           05 WS-QUE-ENTRY OCCURS 10 TIMES.
+               10 WS-Q-CODE      PIC X(5).
+               10 WS-Q-TEXT      PIC X(100).
+               10 WS-Q-WEIGHT    PIC 99.
+       01 WS-TOTAL-QUESTIONS     PIC 99 VALUE 0.
+       01 WS-IDX                 PIC 99.
+       01 WS-Q-WEIGHT-ALPHA      PIC X(5).
 
       *> Working Variables
        01 WS-TOTAL-SCORE         PIC 9(3) VALUE 0.
@@ -83,6 +99,7 @@
            DISPLAY "     BATCH STATUS UPDATE PROGRAM        "
            DISPLAY "========================================="
 
+           PERFORM LOAD-MASTER-QUESTIONS
            PERFORM PROCESS-ALL-APPLICATIONS
            DISPLAY "Batch update completed successfully."
            DISPLAY "Total records processed: " WS-PROCESS-COUNT
@@ -145,6 +162,9 @@
                     WS-CSV-USER-EMAIL
                     WS-CSV-USER-ADDRESS
                     WS-CSV-DEVICE-TYPE
+                    WS-CSV-DEVICE-MODEL
+                    WS-CSV-IMEI-NUMBER
+                    WS-CSV-PREMIUM-PRICE
                     WS-CSV-PLAN-CODE
                     WS-CSV-STATUS
                     WS-CSV-ACTIVE-FLAG
@@ -160,29 +180,6 @@
                ADD 1 TO WS-PROCESS-COUNT
                PERFORM CALCULATE-SCORE-FROM-DETAIL
                PERFORM DETERMINE-FINAL-STATUS
-      *> ==========================================
-      *> Plan Coverage testing
-      *> ==========================================
-               EVALUATE WS-CSV-PLAN-CODE
-                   WHEN 'PLN-L'
-                       IF WS-WATER-FLG = 'Y' OR WS-DAMAGE-FLG = 'Y'
-                           MOVE 'REJECTED' TO WS-FINAL-STATUS
-                       END-IF
-
-                   WHEN 'PLN-S'
-                       IF WS-DAMAGE-FLG = 'Y' OR 
-                          WS-WATER-FLG = 'Y' OR
-                          WS-OLD-FLG    = 'Y'
-                           MOVE 'REJECTED' TO WS-FINAL-STATUS
-                       END-IF
-
-                   WHEN 'PLN-P'
-                       CONTINUE
-
-                   WHEN OTHER
-                       CONTINUE
-
-               END-EVALUATE
 
                MOVE WS-FINAL-STATUS TO WS-CSV-STATUS
                MOVE WS-TOTAL-SCORE TO WS-DISP-SCORE
@@ -199,6 +196,9 @@
                FUNCTION TRIM(WS-CSV-USER-EMAIL) DELIMITED BY SIZE ","
                FUNCTION TRIM(WS-CSV-USER-ADDRESS) DELIMITED BY SIZE ","
                FUNCTION TRIM(WS-CSV-DEVICE-TYPE) DELIMITED BY SIZE ","
+               FUNCTION TRIM(WS-CSV-DEVICE-MODEL) DELIMITED BY SIZE ","
+               FUNCTION TRIM(WS-CSV-IMEI-NUMBER) DELIMITED BY SIZE ","
+               FUNCTION TRIM(WS-CSV-PREMIUM-PRICE) DELIMITED BY SIZE ","
                FUNCTION TRIM(WS-CSV-PLAN-CODE)  DELIMITED BY SIZE ","
                FUNCTION TRIM(WS-CSV-STATUS)     DELIMITED BY SIZE ","
                FUNCTION TRIM(WS-CSV-ACTIVE-FLAG) DELIMITED BY SIZE ","
@@ -209,15 +209,36 @@
            MOVE WS-NEW-LINE TO TEMP-RECORD
            WRITE TEMP-RECORD.
 
+       LOAD-MASTER-QUESTIONS.
+           OPEN INPUT DECL-MASTER
+           MOVE 0 TO WS-TOTAL-QUESTIONS
+           PERFORM UNTIL WS-END-OF-FILE
+               READ DECL-MASTER INTO MASTER-LINE
+                   AT END MOVE 'Y' TO WS-EOF
+                   NOT AT END
+                       ADD 1 TO WS-TOTAL-QUESTIONS
+                       UNSTRING MASTER-LINE DELIMITED BY ","
+                           INTO WS-Q-CODE(WS-TOTAL-QUESTIONS)
+                                WS-Q-TEXT(WS-TOTAL-QUESTIONS)
+                                WS-Q-WEIGHT-ALPHA
+                       END-UNSTRING
+                       COMPUTE WS-Q-WEIGHT(WS-TOTAL-QUESTIONS) = 
+                           FUNCTION NUMVAL(
+                             FUNCTION TRIM(WS-Q-WEIGHT-ALPHA)
+                           )
+               END-READ
+           END-PERFORM
+           CLOSE DECL-MASTER
+           MOVE 'N' TO WS-EOF.
+
       *> ==========================================
       *> Calculate score from details
       *> ==========================================
        CALCULATE-SCORE-FROM-DETAIL.
            MOVE 0 TO WS-TOTAL-SCORE
-           MOVE 'N' TO WS-DAMAGE-FLG
-           MOVE 'N' TO WS-SCREEN-FLG
-           MOVE 'N' TO WS-WATER-FLG
-           MOVE 'N' TO WS-OLD-FLG
+           PERFORM VARYING WS-IDX FROM 1 BY 1 UNTIL WS-IDX > 10
+               MOVE 'N' TO WS-ANS(WS-IDX)
+           END-PERFORM
            MOVE 'N' TO WS-DETAIL-EOF
            MOVE 'N' TO WS-DETAIL-FOUND  
 
@@ -239,26 +260,28 @@
        PARSE-DETAIL-LINE.
            UNSTRING DETAIL-LINE DELIMITED BY ","
                INTO WS-DET-APP-ID
-                    WS-DET-DAMAGE
-                    WS-DET-SCREEN
-                    WS-DET-WATER
-                    WS-DET-OLD
+                    WS-ANS(1)
+                    WS-ANS(2)
+                    WS-ANS(3)
+                    WS-ANS(4)
+                    WS-ANS(5)
+                    WS-ANS(6)
+                    WS-ANS(7)
+                    WS-ANS(8)
+                    WS-ANS(9)
+                    WS-ANS(10)
            END-UNSTRING.
 
-           IF FUNCTION TRIM(WS-DET-APP-ID) =
-              FUNCTION TRIM(WS-CSV-APP-ID)
-               MOVE WS-DET-DAMAGE TO WS-DAMAGE-FLG
-               MOVE WS-DET-SCREEN TO WS-SCREEN-FLG
-               MOVE WS-DET-WATER  TO WS-WATER-FLG
-               MOVE WS-DET-OLD    TO WS-OLD-FLG
-
-      *> Hard-coded Score 
-               IF WS-DAMAGE-FLG = 'Y' ADD 50 TO WS-TOTAL-SCORE END-IF
-               IF WS-SCREEN-FLG = 'Y' ADD 30 TO WS-TOTAL-SCORE END-IF
-               IF WS-WATER-FLG  = 'Y' ADD 40 TO WS-TOTAL-SCORE END-IF
-               IF WS-OLD-FLG    = 'Y' ADD 20 TO WS-TOTAL-SCORE END-IF
-               MOVE 'Y' TO WS-DETAIL-FOUND
-           END-IF.
+            IF FUNCTION TRIM(WS-DET-APP-ID) =
+               FUNCTION TRIM(WS-CSV-APP-ID)
+                PERFORM VARYING WS-IDX FROM 1 BY 1 
+                        UNTIL WS-IDX > WS-TOTAL-QUESTIONS
+                    IF WS-ANS(WS-IDX) = 'Y'
+                        ADD WS-Q-WEIGHT(WS-IDX) TO WS-TOTAL-SCORE
+                    END-IF
+                END-PERFORM
+                MOVE 'Y' TO WS-DETAIL-FOUND
+            END-IF.
 
 
       *> ==========================================
