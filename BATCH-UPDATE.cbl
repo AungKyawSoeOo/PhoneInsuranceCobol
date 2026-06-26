@@ -290,7 +290,7 @@
        DETERMINE-FINAL-STATUS.
            EVALUATE TRUE
                WHEN WS-TOTAL-SCORE = 0
-                   MOVE 'APPROVED' TO WS-FINAL-STATUS
+                   MOVE 'PENDING' TO WS-FINAL-STATUS
                WHEN WS-TOTAL-SCORE <= 30
                    MOVE 'APPROVED' TO WS-FINAL-STATUS
                WHEN WS-TOTAL-SCORE <= 70
