@@ -82,7 +82,7 @@
            IF WS-FILE-STATUS NOT = '00'
                DISPLAY "ERROR: Cannot open T_APPLICATION.CSV"
                EXIT PARAGRAPH
-           END-IF
+           END-IF.
 
            PERFORM UNTIL WS-END-OF-FILE
                READ APP-FILE INTO APP-RECORD
@@ -90,7 +90,7 @@
                    NOT AT END
                        PERFORM CHECK-IMEI-IN-RECORD
                END-READ
-           END-PERFORM
+           END-PERFORM.
 
            CLOSE APP-FILE.
 
@@ -103,8 +103,10 @@
            
            IF WS-IMEI-FOUND > 0
                PERFORM PARSE-AND-CHECK-RECORD
-      *> Stop searching after finding the record
-               MOVE 'Y' TO WS-EOF
+      *> Only stop if we found an ACTIVE record
+               IF WS-FOUND-YES
+                   MOVE 'Y' TO WS-EOF
+               END-IF
            END-IF.
 
        PARSE-AND-CHECK-RECORD.
@@ -169,4 +171,3 @@
                DISPLAY "========================================="
            END-IF.
        END PROGRAM SEARCH-STATUS.
-       
