@@ -24,6 +24,11 @@
                ORGANIZATION IS LINE SEQUENTIAL
                FILE STATUS IS WS-MASTER-STATUS.
 
+           SELECT OPTIONAL COVERAGE-FILE ASSIGN TO
+               "./files/M_PLAN_COVERAGE.CSV"
+               ORGANIZATION IS LINE SEQUENTIAL
+               FILE STATUS IS WS-COVERAGE-STATUS.
+
        DATA DIVISION.
        FILE SECTION.
        FD APP-FILE.
@@ -38,12 +43,16 @@
        FD DECL-MASTER.
        01 MASTER-LINE            PIC X(100).
 
+       FD COVERAGE-FILE.
+       01 COVERAGE-LINE          PIC X(200).
+
        WORKING-STORAGE SECTION.
       *> File Status
        01 WS-FILE-STATUS         PIC XX.
        01 WS-TEMP-STATUS         PIC XX.
        01 WS-DETAIL-STATUS       PIC XX.
        01 WS-MASTER-STATUS       PIC XX.
+       01 WS-COVERAGE-STATUS     PIC XX.
        01 WS-EOF                 PIC X VALUE 'N'.
            88 WS-END-OF-FILE     VALUE 'Y'.
 
@@ -66,6 +75,7 @@
        01 WS-ANSWERS-TABLE.
            05 WS-ANS OCCURS 10 TIMES PIC X(1) VALUE 'N'.
 
+      *> Master Question Variables
        01 WS-MST-CODE            PIC X(5).
        01 WS-MST-QUESTION        PIC X(100).
        01 WS-MST-WEIGHT          PIC 99.
@@ -84,14 +94,45 @@
        01 WS-NEW-LINE            PIC X(400).
        01 WS-DETAIL-EOF          PIC X VALUE 'N'.
            88 WS-END-OF-DETAIL   VALUE 'Y'.
-       01 WS-RECORD-COUNT        PIC 99 VALUE 0.
-       
+       01 WS-RECORD-COUNT        PIC 99 VALUE 0.       
        01 WS-PROCESS-COUNT       PIC 99 VALUE 0.
-       01 WS-DISP-SCORE          PIC Z(3)9. 
-             
-           
+       01 WS-DISP-SCORE          PIC Z(3)9.
        01 WS-DETAIL-FOUND        PIC X VALUE 'N'.
            88 WS-FOUND-DETAIL    VALUE 'Y'.
+
+      *> ==========================================
+      *> Plan Coverage Table (Max 20 entries)
+      *> ==========================================
+       01 WS-COVERAGE-EOF        PIC X VALUE 'N'.
+           88 WS-END-OF-COVERAGE VALUE 'Y'.
+       01 WS-COV-PLAN-CODE       PIC X(5).
+       01 WS-COV-TYPE            PIC X(20).
+       01 WS-COV-ENABLED         PIC X(1).
+       01 WS-COVERAGE-TABLE.
+           05 WS-COV-ENTRY OCCURS 20 TIMES.
+               10 WS-CT-PLAN     PIC X(5).
+               10 WS-CT-TYPE     PIC X(20).
+               10 WS-CT-ENABLED  PIC X(1).
+       01 WS-TOTAL-COVERAGES     PIC 99 VALUE 0.
+       01 WS-COV-IDX             PIC 99.
+
+      *> ==========================================
+      *> Question-to-Coverage Mapping Table
+      *> Q2 -> Screen Damage
+      *> Q3 -> Water Damage
+      *> Q4 -> Full Failure
+      *> Q1, Q5 -> Ignored
+      *> ==========================================
+       01 WS-Q-COVERAGE-MAP.
+           05 WS-MAP-ENTRY OCCURS 10 TIMES.
+               10 WS-MAP-Q-CODE  PIC X(5).
+               10 WS-MAP-COV     PIC X(20).
+
+      *> Conditional Check Variables
+       01 WS-REJECTED-FLAG       PIC X VALUE 'N'.
+       01 WS-MAPPED-COV          PIC X(20).
+       01 WS-COV-FOUND           PIC X VALUE 'N'.
+
        PROCEDURE DIVISION.
 
        MAIN-PROCEDURE.
@@ -100,12 +141,63 @@
            DISPLAY "========================================="
 
            PERFORM LOAD-MASTER-QUESTIONS
+           PERFORM LOAD-PLAN-COVERAGES
+           PERFORM INIT-QUESTION-COVERAGE-MAP
            PERFORM PROCESS-ALL-APPLICATIONS
            DISPLAY "Batch update completed successfully."
            DISPLAY "Total records processed: " WS-PROCESS-COUNT
            EXIT PROGRAM.
 
-      
+      *> ==========================================
+      *> Load M_PLAN_COVERAGE.CSV into table
+      *> ==========================================
+       LOAD-PLAN-COVERAGES.
+           MOVE 0 TO WS-TOTAL-COVERAGES
+           MOVE 'N' TO WS-COVERAGE-EOF
+
+           OPEN INPUT COVERAGE-FILE
+           IF WS-COVERAGE-STATUS NOT = '00'
+               DISPLAY "ERROR: Cannot open M_PLAN_COVERAGE.CSV"
+               EXIT PARAGRAPH
+           END-IF
+
+           PERFORM UNTIL WS-END-OF-COVERAGE
+               READ COVERAGE-FILE INTO COVERAGE-LINE
+                   AT END MOVE 'Y' TO WS-COVERAGE-EOF
+                   NOT AT END
+                       ADD 1 TO WS-TOTAL-COVERAGES
+                       UNSTRING COVERAGE-LINE DELIMITED BY ","
+                           INTO WS-CT-PLAN(WS-TOTAL-COVERAGES)
+                                WS-CT-TYPE(WS-TOTAL-COVERAGES)
+                                WS-CT-ENABLED(WS-TOTAL-COVERAGES)
+                       END-UNSTRING
+               END-READ
+           END-PERFORM
+
+           CLOSE COVERAGE-FILE.
+
+      *> ==========================================
+      *> Initialize Question -> Coverage Mapping
+      *> ==========================================
+       INIT-QUESTION-COVERAGE-MAP.
+           MOVE 'Q1   ' TO WS-MAP-Q-CODE(1)
+           MOVE SPACES  TO WS-MAP-COV(1)
+
+           MOVE 'Q2   ' TO WS-MAP-Q-CODE(2)
+           MOVE 'Screen Damage       ' TO WS-MAP-COV(2)
+
+           MOVE 'Q3   ' TO WS-MAP-Q-CODE(3)
+           MOVE 'Water Damage        ' TO WS-MAP-COV(3)
+
+           MOVE 'Q4   ' TO WS-MAP-Q-CODE(4)
+           MOVE 'Full Failure        ' TO WS-MAP-COV(4)
+
+           MOVE 'Q5   ' TO WS-MAP-Q-CODE(5)
+           MOVE SPACES  TO WS-MAP-COV(5).
+
+      *> ==========================================
+      *> Process All Applications
+      *> ==========================================
        PROCESS-ALL-APPLICATIONS.
            OPEN INPUT APP-FILE
            IF WS-FILE-STATUS NOT = '00'
@@ -129,8 +221,7 @@
 
            CLOSE APP-FILE
            CLOSE TEMP-FILE
-
-      *> Deleting old file and creating new Temp file 
+           
            OPEN INPUT TEMP-FILE
            IF WS-TEMP-STATUS NOT = '00'
                DISPLAY "ERROR: Cannot open TEMP_APPLICATION.CSV"
@@ -155,6 +246,10 @@
 
            CLOSE TEMP-FILE
            CLOSE APP-FILE.
+
+      *> ==========================================
+      *> Parse and Process Each Application Record
+      *> ==========================================
        PARSE-AND-PROCESS-RECORD.
            UNSTRING APP-RECORD DELIMITED BY ","
                INTO WS-CSV-APP-ID
@@ -170,16 +265,18 @@
                     WS-CSV-ACTIVE-FLAG
                     WS-CSV-DATE
            END-UNSTRING.
-
-      *> ==========================================
-      *> ACTIVE_FLAG = 'Y' and STATUS = 'PENDING' check
-      *> ==========================================
+   
            IF WS-CSV-ACTIVE-FLAG = 'Y' AND
               WS-CSV-STATUS = 'PENDING'
 
                ADD 1 TO WS-PROCESS-COUNT
                PERFORM CALCULATE-SCORE-FROM-DETAIL
                PERFORM DETERMINE-FINAL-STATUS
+
+      *> If CONDITIONAL, re-evaluate using plan coverages
+               IF WS-FINAL-STATUS = 'CONDITIONAL'
+                   PERFORM CHECK-CONDITIONAL-STATUS
+               END-IF
 
                MOVE WS-FINAL-STATUS TO WS-CSV-STATUS
                MOVE WS-TOTAL-SCORE TO WS-DISP-SCORE
@@ -191,27 +288,31 @@
 
            MOVE SPACES TO WS-NEW-LINE
            STRING
-               FUNCTION TRIM(WS-CSV-APP-ID)     DELIMITED BY SIZE ","
-               FUNCTION TRIM(WS-CSV-USER-NAME)  DELIMITED BY SIZE ","
-               FUNCTION TRIM(WS-CSV-USER-EMAIL) DELIMITED BY SIZE ","
+               FUNCTION TRIM(WS-CSV-APP-ID)      DELIMITED BY SIZE ","
+               FUNCTION TRIM(WS-CSV-USER-NAME)   DELIMITED BY SIZE ","
+               FUNCTION TRIM(WS-CSV-USER-EMAIL)  DELIMITED BY SIZE ","
                FUNCTION TRIM(WS-CSV-USER-ADDRESS) DELIMITED BY SIZE ","
                FUNCTION TRIM(WS-CSV-DEVICE-TYPE) DELIMITED BY SIZE ","
                FUNCTION TRIM(WS-CSV-DEVICE-MODEL) DELIMITED BY SIZE ","
                FUNCTION TRIM(WS-CSV-IMEI-NUMBER) DELIMITED BY SIZE ","
                FUNCTION TRIM(WS-CSV-PREMIUM-PRICE) DELIMITED BY SIZE ","
-               FUNCTION TRIM(WS-CSV-PLAN-CODE)  DELIMITED BY SIZE ","
-               FUNCTION TRIM(WS-CSV-STATUS)     DELIMITED BY SIZE ","
+               FUNCTION TRIM(WS-CSV-PLAN-CODE)   DELIMITED BY SIZE ","
+               FUNCTION TRIM(WS-CSV-STATUS)      DELIMITED BY SIZE ","
                FUNCTION TRIM(WS-CSV-ACTIVE-FLAG) DELIMITED BY SIZE ","
-               FUNCTION TRIM(WS-CSV-DATE)       DELIMITED BY SIZE
+               FUNCTION TRIM(WS-CSV-DATE)        DELIMITED BY SIZE
                INTO WS-NEW-LINE
            END-STRING.
 
            MOVE WS-NEW-LINE TO TEMP-RECORD
            WRITE TEMP-RECORD.
 
+      *> ==========================================
+      *> Load Master Questions
+      *> ==========================================
        LOAD-MASTER-QUESTIONS.
            OPEN INPUT DECL-MASTER
            MOVE 0 TO WS-TOTAL-QUESTIONS
+           MOVE 'N' TO WS-EOF
            PERFORM UNTIL WS-END-OF-FILE
                READ DECL-MASTER INTO MASTER-LINE
                    AT END MOVE 'Y' TO WS-EOF
@@ -222,7 +323,7 @@
                                 WS-Q-TEXT(WS-TOTAL-QUESTIONS)
                                 WS-Q-WEIGHT-ALPHA
                        END-UNSTRING
-                       COMPUTE WS-Q-WEIGHT(WS-TOTAL-QUESTIONS) = 
+                       COMPUTE WS-Q-WEIGHT(WS-TOTAL-QUESTIONS) =
                            FUNCTION NUMVAL(
                              FUNCTION TRIM(WS-Q-WEIGHT-ALPHA)
                            )
@@ -232,7 +333,7 @@
            MOVE 'N' TO WS-EOF.
 
       *> ==========================================
-      *> Calculate score from details
+      *> Calculate Score from Detail CSV
       *> ==========================================
        CALCULATE-SCORE-FROM-DETAIL.
            MOVE 0 TO WS-TOTAL-SCORE
@@ -240,7 +341,7 @@
                MOVE 'N' TO WS-ANS(WS-IDX)
            END-PERFORM
            MOVE 'N' TO WS-DETAIL-EOF
-           MOVE 'N' TO WS-DETAIL-FOUND  
+           MOVE 'N' TO WS-DETAIL-FOUND
 
            OPEN INPUT DECL-DETAIL
            IF WS-DETAIL-STATUS NOT = '00'
@@ -257,6 +358,7 @@
            END-PERFORM
 
            CLOSE DECL-DETAIL.
+
        PARSE-DETAIL-LINE.
            UNSTRING DETAIL-LINE DELIMITED BY ","
                INTO WS-DET-APP-ID
@@ -272,20 +374,19 @@
                     WS-ANS(10)
            END-UNSTRING.
 
-            IF FUNCTION TRIM(WS-DET-APP-ID) =
-               FUNCTION TRIM(WS-CSV-APP-ID)
-                PERFORM VARYING WS-IDX FROM 1 BY 1 
-                        UNTIL WS-IDX > WS-TOTAL-QUESTIONS
-                    IF WS-ANS(WS-IDX) = 'Y'
-                        ADD WS-Q-WEIGHT(WS-IDX) TO WS-TOTAL-SCORE
-                    END-IF
-                END-PERFORM
-                MOVE 'Y' TO WS-DETAIL-FOUND
-            END-IF.
-
-
+           IF FUNCTION TRIM(WS-DET-APP-ID) =
+              FUNCTION TRIM(WS-CSV-APP-ID)
+               PERFORM VARYING WS-IDX FROM 1 BY 1
+                       UNTIL WS-IDX > WS-TOTAL-QUESTIONS
+                   IF WS-ANS(WS-IDX) = 'Y'
+                       ADD WS-Q-WEIGHT(WS-IDX) TO WS-TOTAL-SCORE
+                   END-IF
+               END-PERFORM
+               MOVE 'Y' TO WS-DETAIL-FOUND
+           END-IF.
+         
       *> ==========================================
-      *> Assigning Final Status based on scores
+      *> Determine Final Status Based on Score
       *> ==========================================
        DETERMINE-FINAL-STATUS.
            EVALUATE TRUE
@@ -298,5 +399,67 @@
                WHEN WS-TOTAL-SCORE > 70
                    MOVE 'REJECTED' TO WS-FINAL-STATUS
            END-EVALUATE.
+
+      *> ==========================================
+      *> Re-evaluate CONDITIONAL using Plan Coverages
+      *> For each question answered Y:
+      *>   - Get its mapped coverage
+      *>   - Check if that coverage is ENABLED in user plan
+      *>   - If NOT enabled/found -> REJECTED
+      *>   - If ALL covered -> APPROVED
+      *> Q1 and Q5 are ignored in this check
+      *> ==========================================
+       CHECK-CONDITIONAL-STATUS.
+           MOVE 'N' TO WS-REJECTED-FLAG
+
+           PERFORM VARYING WS-IDX FROM 1 BY 1
+                   UNTIL WS-IDX > WS-TOTAL-QUESTIONS
+
+      *> Only check questions answered Y
+               IF WS-ANS(WS-IDX) = 'Y'
+
+      *> Get the coverage mapped to this question
+                   MOVE WS-MAP-COV(WS-IDX) TO WS-MAPPED-COV
+
+      *> Skip if no coverage mapped (Q1, Q5)
+                   IF FUNCTION TRIM(WS-MAPPED-COV) NOT = SPACES
+
+      *> Search plan coverage table for this plan+coverage
+                       MOVE 'N' TO WS-COV-FOUND
+                       PERFORM VARYING WS-COV-IDX FROM 1 BY 1
+                               UNTIL WS-COV-IDX > WS-TOTAL-COVERAGES
+
+                           IF FUNCTION TRIM(WS-CT-PLAN(WS-COV-IDX)) =
+                              FUNCTION TRIM(WS-CSV-PLAN-CODE)
+                           AND
+                              FUNCTION TRIM(WS-CT-TYPE(WS-COV-IDX)) =
+                              FUNCTION TRIM(WS-MAPPED-COV)
+
+      *> Found the coverage entry - check if enabled
+                               IF WS-CT-ENABLED(WS-COV-IDX) = 'Y'
+                                   MOVE 'Y' TO WS-COV-FOUND
+                               ELSE
+      *> Coverage exists but disabled -> REJECTED
+                                   MOVE 'Y' TO WS-REJECTED-FLAG
+                               END-IF
+                           END-IF
+                       END-PERFORM
+
+      *> Coverage not found in plan at all -> REJECTED
+                       IF WS-COV-FOUND = 'N' AND
+                          WS-REJECTED-FLAG = 'N'
+                           MOVE 'Y' TO WS-REJECTED-FLAG
+                       END-IF
+
+                   END-IF
+               END-IF
+           END-PERFORM.
+
+      *> Set final status based on rejection flag
+           IF WS-REJECTED-FLAG = 'Y'
+               MOVE 'REJECTED' TO WS-FINAL-STATUS
+           ELSE
+               MOVE 'APPROVED' TO WS-FINAL-STATUS
+           END-IF.
 
        END PROGRAM BATCH-UPDATE.
