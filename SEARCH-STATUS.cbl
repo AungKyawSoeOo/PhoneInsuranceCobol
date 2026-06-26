@@ -5,7 +5,7 @@
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
            SELECT APP-FILE ASSIGN TO
-               "D:\PhoneInsuranceCobol\files\T_APPLICATION.CSV"
+               "./files/T_APPLICATION.CSV"
                ORGANIZATION IS LINE SEQUENTIAL
                FILE STATUS IS WS-FILE-STATUS.
 
