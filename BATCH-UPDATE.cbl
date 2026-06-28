@@ -180,8 +180,8 @@
       *> Initialize Question -> Coverage Mapping
       *> ==========================================
        INIT-QUESTION-COVERAGE-MAP.
-           MOVE 'Q1   ' TO WS-MAP-Q-CODE(1)
-           MOVE SPACES  TO WS-MAP-COV(1)
+           MOVE 'Q1 ' TO WS-MAP-Q-CODE(1)
+           MOVE 'Theft ' TO WS-MAP-COV(1) *> NOW MAPPED
 
            MOVE 'Q2   ' TO WS-MAP-Q-CODE(2)
            MOVE 'Screen Damage       ' TO WS-MAP-COV(2)
